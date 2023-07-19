@@ -1,12 +1,13 @@
 package com.mekomsolutions.maven.plugin;
 
-import java.io.IOException;
-import java.nio.file.Files;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.security.MessageDigest;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -40,7 +41,7 @@ public class DependencyRecorder {
 	/**
 	 * Records the declared dependencies
 	 */
-	protected void record() throws IOException {
+	protected void record() throws Exception {
 		log.info("Recording project dependencies");
 		
 		Properties record = prepareRecordArtifact();
@@ -61,7 +62,7 @@ public class DependencyRecorder {
 	 * 
 	 * @return record as properties
 	 */
-	protected Properties prepareRecordArtifact() throws IOException {
+	protected Properties prepareRecordArtifact() throws Exception {
 		Set<Artifact> artifacts = project.getDependencyArtifacts();
 		
 		log.info("Found " + artifacts.size() + " dependencies to record");
@@ -70,8 +71,9 @@ public class DependencyRecorder {
 		for (Artifact a : artifacts) {
 			log.debug("Generating sha1 for artifact -> " + a);
 			
-			byte[] artifactData = Files.readAllBytes(a.getFile().toPath());
-			record.setProperty(a.getDependencyConflictId(), DigestUtils.sha1Hex(artifactData));
+			byte[] artifactData = Utils.readFile(a.getFile());
+			byte[] hashData = MessageDigest.getInstance("SHA-1").digest(artifactData);
+			record.setProperty(a.getDependencyConflictId(), new String(Base64.getEncoder().encode(hashData), UTF_8));
 		}
 		
 		return record;
