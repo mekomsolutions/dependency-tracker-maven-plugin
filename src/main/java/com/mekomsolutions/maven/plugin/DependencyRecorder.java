@@ -1,9 +1,12 @@
 package com.mekomsolutions.maven.plugin;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -37,7 +40,7 @@ public class DependencyRecorder {
 	/**
 	 * Records the declared dependencies
 	 */
-	protected void record() {
+	protected void record() throws IOException {
 		log.info("Recording project dependencies");
 		
 		Properties record = prepareRecordArtifact();
@@ -58,11 +61,17 @@ public class DependencyRecorder {
 	 * 
 	 * @return record as properties
 	 */
-	protected Properties prepareRecordArtifact() {
+	protected Properties prepareRecordArtifact() throws IOException {
 		Set<Artifact> artifacts = project.getDependencyArtifacts();
+		
+		log.info("Found " + artifacts.size() + " dependencies to record");
+		
 		Properties record = new Properties();
-		for (Artifact artifact : artifacts) {
-			//TODO
+		for (Artifact a : artifacts) {
+			log.debug("Generating sha1 for artifact -> " + a);
+			
+			byte[] artifactData = Files.readAllBytes(a.getFile().toPath());
+			record.setProperty(a.getDependencyConflictId(), DigestUtils.sha1Hex(artifactData));
 		}
 		
 		return record;
@@ -74,7 +83,7 @@ public class DependencyRecorder {
 	 * @param record the record artifact to save
 	 */
 	protected void saveRecordArtifact(Properties record) {
-		log.info("Saving the artifact of recorded dependencies");
+		log.info("Saving the artifact containing recorded dependencies");
 		//TODO save
 	}
 	
