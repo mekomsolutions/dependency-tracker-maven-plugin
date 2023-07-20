@@ -13,8 +13,8 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Goal which captures project dependency details excluding transitive dependencies and writes them
- * to a file as an artifact in the build directory.
+ * Goal which tracks project dependency details excluding transitive dependencies and writes them to
+ * a file as an artifact in the build directory.
  */
 @Mojo(name = "track", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.TEST)
 public class DependencyTrackerMojo extends AbstractMojo {
@@ -25,13 +25,16 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${project.build.directory}", readonly = true)
 	private File buildDirectory;
 	
+	@Parameter(defaultValue = "${project.build.finalName}", readonly = true)
+	private String buildFileName;
+	
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		try {
-			DependencyTracker.createInstance(project, buildDirectory, getLog()).track();
+			DependencyTracker.createInstance(project, buildFileName, buildDirectory, getLog()).track();
 		}
 		catch (IOException e) {
-			throw new MojoFailureException("An error occurred while capturing dependencies", e);
+			throw new MojoFailureException("An error occurred while tracking dependencies", e);
 		}
 	}
 	

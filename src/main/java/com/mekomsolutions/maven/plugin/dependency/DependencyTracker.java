@@ -1,7 +1,6 @@
 package com.mekomsolutions.maven.plugin.dependency;
 
 import static com.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
-import static com.mekomsolutions.maven.plugin.dependency.Constants.FILE_NAME_SEPARATOR;
 import static com.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
 
 import java.io.File;
@@ -23,12 +22,15 @@ public class DependencyTracker {
 	
 	private MavenProject project;
 	
+	private String buildFileName;
+	
 	private File buildDirectory;
 	
 	private Log log;
 	
-	private DependencyTracker(MavenProject project, File buildDirectory, Log log) {
+	private DependencyTracker(MavenProject project, String buildFileName, File buildDirectory, Log log) {
 		this.project = project;
+		this.buildFileName = buildFileName;
 		this.buildDirectory = buildDirectory;
 		this.log = log;
 	}
@@ -37,12 +39,15 @@ public class DependencyTracker {
 	 * Creates a {@link DependencyTracker} instance
 	 * 
 	 * @param project {@link MavenProject} instance
+	 * @param buildFileName the name of the project build file
 	 * @param buildDirectory the build directory where to save the generated artifact
 	 * @param log {@link Log} instance
 	 * @return DependencyTracker instance
 	 */
-	protected static DependencyTracker createInstance(MavenProject project, File buildDirectory, Log log) {
-		return new DependencyTracker(project, buildDirectory, log);
+	protected static DependencyTracker createInstance(MavenProject project, String buildFileName, File buildDirectory,
+	        Log log) {
+		
+		return new DependencyTracker(project, buildFileName, buildDirectory, log);
 	}
 	
 	/**
@@ -95,9 +100,7 @@ public class DependencyTracker {
 	 * @throws IOException
 	 */
 	protected void saveDependencyArtifact(List<String> lines) throws IOException {
-		String id = project.getArtifactId();
-		String version = project.getVersion();
-		File artifactFile = new File(buildDirectory, id + FILE_NAME_SEPARATOR + version + ARTIFACT_SUFFIX);
+		File artifactFile = new File(buildDirectory, buildFileName + ARTIFACT_SUFFIX);
 		
 		log.info("Saving dependency tracker artifact to " + artifactFile);
 		
