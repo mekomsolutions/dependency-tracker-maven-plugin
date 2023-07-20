@@ -1,5 +1,7 @@
 package com.mekomsolutions.maven.plugin;
 
+import java.io.File;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -19,10 +21,13 @@ public class DependencyRecorderMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${project}", readonly = true)
 	private MavenProject project;
 	
+	@Parameter(defaultValue = "${project.build.directory}", readonly = true)
+	private File buildDirectory;
+	
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		try {
-			DependencyRecorder.createInstance(project, getLog()).record();
+			DependencyRecorder.createInstance(project, buildDirectory, getLog()).record();
 		}
 		catch (Exception e) {
 			throw new MojoFailureException("An error occurred while recording dependencies", e);

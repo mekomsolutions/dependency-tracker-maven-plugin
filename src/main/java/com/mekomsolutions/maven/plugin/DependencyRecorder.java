@@ -2,6 +2,9 @@ package com.mekomsolutions.maven.plugin;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.Map;
@@ -11,6 +14,7 @@ import java.util.Set;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.util.FileUtils;
 
 /**
  * Helper class that records and generates an artifact containing only declared dependencies along
@@ -20,10 +24,13 @@ public class DependencyRecorder {
 	
 	private MavenProject project;
 	
+	private File buildDirectory;
+	
 	private Log log;
 	
-	private DependencyRecorder(MavenProject project, Log log) {
+	private DependencyRecorder(MavenProject project, File buildDirectory, Log log) {
 		this.project = project;
+		this.buildDirectory = buildDirectory;
 		this.log = log;
 	}
 	
@@ -31,15 +38,18 @@ public class DependencyRecorder {
 	 * Creates a {@link DependencyRecorder} instance
 	 * 
 	 * @param project {@link MavenProject} instance
+	 * @param buildDirectory the build directory where to save the generated artifact
 	 * @param log {@link Log} instance
 	 * @return DependencyRecorder instance
 	 */
-	protected static DependencyRecorder createInstance(MavenProject project, Log log) {
-		return new DependencyRecorder(project, log);
+	protected static DependencyRecorder createInstance(MavenProject project, File buildDirectory, Log log) {
+		return new DependencyRecorder(project, buildDirectory, log);
 	}
 	
 	/**
 	 * Records the declared dependencies
+	 * 
+	 * @throws Exception
 	 */
 	protected void record() throws Exception {
 		log.info("Recording project dependencies");
@@ -61,6 +71,7 @@ public class DependencyRecorder {
 	 * Prepares the dependency record artifact
 	 * 
 	 * @return record as properties
+	 * @throws Exception
 	 */
 	protected Properties prepareRecordArtifact() throws Exception {
 		Set<Artifact> artifacts = project.getDependencyArtifacts();
@@ -83,10 +94,14 @@ public class DependencyRecorder {
 	 * Saves the record artifact
 	 * 
 	 * @param record the record artifact to save
+	 * @throws IOException
 	 */
-	protected void saveRecordArtifact(Properties record) {
+	protected void saveRecordArtifact(Properties record) throws IOException {
 		log.info("Saving the artifact containing recorded dependencies");
-		//TODO save
+		
+		ByteArrayOutputStream o = new ByteArrayOutputStream();
+		record.store(o, "");
+		FileUtils.fileWrite(new File(buildDirectory, "dependency-record.txt"), UTF_8.name(), o.toString(UTF_8.name()));
 	}
 	
 }
