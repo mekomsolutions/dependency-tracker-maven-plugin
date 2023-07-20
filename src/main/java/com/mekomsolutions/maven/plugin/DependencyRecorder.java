@@ -1,20 +1,21 @@
 package com.mekomsolutions.maven.plugin;
 
+import static com.mekomsolutions.maven.plugin.Constants.ARTIFACT_SUFFIX;
+import static com.mekomsolutions.maven.plugin.Constants.FILENAME_SEPARATOR;
+import static com.mekomsolutions.maven.plugin.Constants.OUTPUT_SEPARATOR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Map;
-import java.util.Properties;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.FileUtils;
 
 /**
  * Helper class that records and generates an artifact containing only declared dependencies along
@@ -54,54 +55,54 @@ public class DependencyRecorder {
 	protected void record() throws Exception {
 		log.info("Recording project dependencies");
 		
-		Properties record = prepareRecordArtifact();
+		List<String> lines = prepareDependencyArtifact();
 		
 		log.debug("---------------------- Recorded Dependencies ----------------------");
 		
-		for (Map.Entry entry : record.entrySet()) {
-			log.debug(entry.getKey() + "=" + entry.getValue());
+		for (String line : lines) {
+			log.debug(line);
 		}
 		
 		log.debug("-------------------------------------------------------------------");
 		
-		saveRecordArtifact(record);
+		saveDependencyArtifact(lines);
 	}
 	
 	/**
-	 * Prepares the dependency record artifact
+	 * Prepares the dependency details
 	 * 
-	 * @return record as properties
+	 * @return artifact contents
 	 * @throws Exception
 	 */
-	protected Properties prepareRecordArtifact() throws Exception {
+	protected List<String> prepareDependencyArtifact() throws Exception {
 		Set<Artifact> artifacts = project.getDependencyArtifacts();
 		
 		log.info("Found " + artifacts.size() + " dependencies to record");
 		
-		Properties record = new Properties();
+		List<String> lines = new ArrayList<>();
 		for (Artifact a : artifacts) {
 			log.debug("Generating sha1 for artifact -> " + a);
 			
-			byte[] artifactData = Utils.readFile(a.getFile());
-			byte[] hashData = MessageDigest.getInstance("SHA-1").digest(artifactData);
-			record.setProperty(a.getDependencyConflictId(), new String(Base64.getEncoder().encode(hashData), UTF_8));
+			byte[] hashBytes = MessageDigest.getInstance("SHA-1").digest(Utils.readFile(a.getFile()));
+			String hash = new String(Base64.getEncoder().encode(hashBytes), UTF_8);
+			lines.add(a.getDependencyConflictId() + OUTPUT_SEPARATOR + hash);
 		}
 		
-		return record;
+		return lines;
 	}
 	
 	/**
-	 * Saves the record artifact
+	 * Saves the artifact
 	 * 
-	 * @param record the record artifact to save
+	 * @param lines artifact contents
 	 * @throws IOException
 	 */
-	protected void saveRecordArtifact(Properties record) throws IOException {
-		log.info("Saving the artifact containing recorded dependencies");
+	protected void saveDependencyArtifact(List<String> lines) throws IOException {
+		log.info("Saving recorded dependency details");
 		
-		ByteArrayOutputStream o = new ByteArrayOutputStream();
-		record.store(o, "");
-		FileUtils.fileWrite(new File(buildDirectory, "dependency-record.txt"), UTF_8.name(), o.toString(UTF_8.name()));
+		String id = project.getArtifactId();
+		String version = project.getVersion();
+		Utils.writeToFile(new File(buildDirectory, id + FILENAME_SEPARATOR + version + ARTIFACT_SUFFIX), lines);
 	}
 	
 }
