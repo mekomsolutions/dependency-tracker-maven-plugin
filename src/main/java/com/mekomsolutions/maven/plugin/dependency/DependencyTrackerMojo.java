@@ -1,4 +1,4 @@
-package com.mekomsolutions.maven.plugin;
+package com.mekomsolutions.maven.plugin.dependency;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,11 +13,11 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Goal which records project dependency details excluding transitive dependencies and writes them
- * to a file as an artifact located in the build directory.
+ * Goal which captures project dependency details excluding transitive dependencies and writes them
+ * to a file as an artifact in the build directory.
  */
-@Mojo(name = "record", defaultPhase = LifecyclePhase.PACKAGE, requiresDependencyResolution = ResolutionScope.TEST)
-public class DependencyRecorderMojo extends AbstractMojo {
+@Mojo(name = "track", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.TEST)
+public class DependencyTrackerMojo extends AbstractMojo {
 	
 	@Parameter(defaultValue = "${project}", readonly = true)
 	private MavenProject project;
@@ -28,10 +28,10 @@ public class DependencyRecorderMojo extends AbstractMojo {
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		try {
-			DependencyRecorder.createInstance(project, buildDirectory, getLog()).record();
+			DependencyTracker.createInstance(project, buildDirectory, getLog()).track();
 		}
 		catch (IOException e) {
-			throw new MojoFailureException("An error occurred while recording dependencies", e);
+			throw new MojoFailureException("An error occurred while capturing dependencies", e);
 		}
 	}
 	

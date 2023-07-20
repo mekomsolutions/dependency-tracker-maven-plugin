@@ -1,4 +1,4 @@
-package com.mekomsolutions.maven.plugin;
+package com.mekomsolutions.maven.plugin.dependency;
 
 import java.io.File;
 import java.io.IOException;

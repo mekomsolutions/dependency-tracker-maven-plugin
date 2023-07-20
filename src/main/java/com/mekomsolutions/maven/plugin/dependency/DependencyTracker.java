@@ -1,8 +1,8 @@
-package com.mekomsolutions.maven.plugin;
+package com.mekomsolutions.maven.plugin.dependency;
 
-import static com.mekomsolutions.maven.plugin.Constants.ARTIFACT_SUFFIX;
-import static com.mekomsolutions.maven.plugin.Constants.FILENAME_SEPARATOR;
-import static com.mekomsolutions.maven.plugin.Constants.OUTPUT_SEPARATOR;
+import static com.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
+import static com.mekomsolutions.maven.plugin.dependency.Constants.FILE_NAME_SEPARATOR;
+import static com.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,10 +16,10 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Helper class that records and generates an artifact containing only declared dependencies along
+ * Helper class that captures and generates an artifact containing only declared dependencies along
  * with their hashes, the generated artifact is saved in the build directory
  */
-public class DependencyRecorder {
+public class DependencyTracker {
 	
 	private MavenProject project;
 	
@@ -27,41 +27,41 @@ public class DependencyRecorder {
 	
 	private Log log;
 	
-	private DependencyRecorder(MavenProject project, File buildDirectory, Log log) {
+	private DependencyTracker(MavenProject project, File buildDirectory, Log log) {
 		this.project = project;
 		this.buildDirectory = buildDirectory;
 		this.log = log;
 	}
 	
 	/**
-	 * Creates a {@link DependencyRecorder} instance
+	 * Creates a {@link DependencyTracker} instance
 	 * 
 	 * @param project {@link MavenProject} instance
 	 * @param buildDirectory the build directory where to save the generated artifact
 	 * @param log {@link Log} instance
-	 * @return DependencyRecorder instance
+	 * @return DependencyTracker instance
 	 */
-	protected static DependencyRecorder createInstance(MavenProject project, File buildDirectory, Log log) {
-		return new DependencyRecorder(project, buildDirectory, log);
+	protected static DependencyTracker createInstance(MavenProject project, File buildDirectory, Log log) {
+		return new DependencyTracker(project, buildDirectory, log);
 	}
 	
 	/**
-	 * Records the declared dependencies
+	 * Tracks the declared dependencies
 	 * 
 	 * @throws Exception
 	 */
-	protected void record() throws IOException {
-		log.info("Recording project dependencies");
+	protected void track() throws IOException {
+		log.info("Capturing project dependencies");
 		
 		List<String> lines = prepareDependencyArtifact();
 		
-		log.debug("---------------------- Recorded Dependencies ----------------------");
+		log.debug("---------------------- Tracked Dependencies ----------------------");
 		
 		for (String line : lines) {
 			log.debug(line);
 		}
 		
-		log.debug("-------------------------------------------------------------------");
+		log.debug("------------------------------------------------------------------");
 		
 		saveDependencyArtifact(lines);
 	}
@@ -75,11 +75,11 @@ public class DependencyRecorder {
 	protected List<String> prepareDependencyArtifact() throws IOException {
 		Set<Artifact> artifacts = project.getDependencyArtifacts();
 		
-		log.info("Found " + artifacts.size() + " dependencies to record");
+		log.info("Found " + artifacts.size() + " dependencies to track");
 		
 		List<String> lines = new ArrayList<>();
 		for (Artifact a : artifacts) {
-			log.debug("Generating sha1 for artifact -> " + a);
+			log.debug("Generating sha1 hash for artifact: " + a);
 			
 			String hash = DigestUtils.sha1Hex(Utils.readFile(a.getFile()));
 			lines.add(a.getDependencyConflictId() + OUTPUT_SEPARATOR + hash);
@@ -95,11 +95,13 @@ public class DependencyRecorder {
 	 * @throws IOException
 	 */
 	protected void saveDependencyArtifact(List<String> lines) throws IOException {
-		log.info("Saving recorded dependency details");
-		
 		String id = project.getArtifactId();
 		String version = project.getVersion();
-		Utils.writeToFile(new File(buildDirectory, id + FILENAME_SEPARATOR + version + ARTIFACT_SUFFIX), lines);
+		File artifactFile = new File(buildDirectory, id + FILE_NAME_SEPARATOR + version + ARTIFACT_SUFFIX);
+		
+		log.info("Saving dependency tracker artifact to " + artifactFile);
+		
+		Utils.writeToFile(artifactFile, lines);
 	}
 	
 }
