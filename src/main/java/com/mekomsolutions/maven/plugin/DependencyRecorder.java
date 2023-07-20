@@ -3,16 +3,14 @@ package com.mekomsolutions.maven.plugin;
 import static com.mekomsolutions.maven.plugin.Constants.ARTIFACT_SUFFIX;
 import static com.mekomsolutions.maven.plugin.Constants.FILENAME_SEPARATOR;
 import static com.mekomsolutions.maven.plugin.Constants.OUTPUT_SEPARATOR;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -52,7 +50,7 @@ public class DependencyRecorder {
 	 * 
 	 * @throws Exception
 	 */
-	protected void record() throws Exception {
+	protected void record() throws IOException {
 		log.info("Recording project dependencies");
 		
 		List<String> lines = prepareDependencyArtifact();
@@ -72,9 +70,9 @@ public class DependencyRecorder {
 	 * Prepares the dependency details
 	 * 
 	 * @return artifact contents
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	protected List<String> prepareDependencyArtifact() throws Exception {
+	protected List<String> prepareDependencyArtifact() throws IOException {
 		Set<Artifact> artifacts = project.getDependencyArtifacts();
 		
 		log.info("Found " + artifacts.size() + " dependencies to record");
@@ -83,8 +81,7 @@ public class DependencyRecorder {
 		for (Artifact a : artifacts) {
 			log.debug("Generating sha1 for artifact -> " + a);
 			
-			byte[] hashBytes = MessageDigest.getInstance("SHA-1").digest(Utils.readFile(a.getFile()));
-			String hash = new String(Base64.getEncoder().encode(hashBytes), UTF_8);
+			String hash = DigestUtils.sha1Hex(Utils.readFile(a.getFile()));
 			lines.add(a.getDependencyConflictId() + OUTPUT_SEPARATOR + hash);
 		}
 		

@@ -1,6 +1,7 @@
 package com.mekomsolutions.maven.plugin;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -29,7 +30,7 @@ public class DependencyRecorderMojo extends AbstractMojo {
 		try {
 			DependencyRecorder.createInstance(project, buildDirectory, getLog()).record();
 		}
-		catch (Exception e) {
+		catch (IOException e) {
 			throw new MojoFailureException("An error occurred while recording dependencies", e);
 		}
 	}
