@@ -32,4 +32,15 @@ public class Utils {
 		Files.write(file.toPath(), lines);
 	}
 	
+	/**
+	 * Creates a File instance with the specified parent and name
+	 * 
+	 * @param parent parent directory
+	 * @param fileName file name
+	 * @return File object
+	 */
+	public static File instantiateFile(File parent, String fileName) {
+		return new File(parent, fileName);
+	}
+	
 }

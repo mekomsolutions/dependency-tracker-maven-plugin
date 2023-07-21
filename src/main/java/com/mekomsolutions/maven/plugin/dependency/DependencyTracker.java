@@ -100,7 +100,7 @@ public class DependencyTracker {
 	 * @throws IOException
 	 */
 	protected void saveDependencyArtifact(List<String> lines) throws IOException {
-		File artifactFile = new File(buildDirectory, buildFileName + ARTIFACT_SUFFIX);
+		File artifactFile = Utils.instantiateFile(buildDirectory, buildFileName + ARTIFACT_SUFFIX);
 		
 		log.info("Saving dependency tracker artifact to " + artifactFile);
 		
