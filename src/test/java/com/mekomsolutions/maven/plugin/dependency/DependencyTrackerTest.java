@@ -47,7 +47,6 @@ public class DependencyTrackerTest {
 	@Before
 	public void setup() {
 		PowerMockito.mockStatic(Utils.class);
-		//PowerMockito.mockStatic(Utils.class);
 		tracker = DependencyTracker.createInstance(mockProject, TEST_FILE_NAME, mockBuildDir, mockLogger);
 	}
 	
