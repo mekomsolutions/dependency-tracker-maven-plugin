@@ -110,9 +110,9 @@ public class DependencyTrackerTest {
 		List<String> lines = tracker.prepareDependencyArtifact();
 		
 		assertEquals(3, lines.size());
-		assertEquals(a3.getDependencyConflictId() + OUTPUT_SEPARATOR + sha1Hex(data3.getBytes(UTF_8)), lines.get(0));
-		assertEquals(a1.getDependencyConflictId() + OUTPUT_SEPARATOR + sha1Hex(data1.getBytes(UTF_8)), lines.get(1));
-		assertEquals(a2.getDependencyConflictId() + OUTPUT_SEPARATOR + sha1Hex(data2.getBytes(UTF_8)), lines.get(2));
+		assertEquals(a3.getId() + OUTPUT_SEPARATOR + sha1Hex(data3.getBytes(UTF_8)), lines.get(0));
+		assertEquals(a1.getId() + OUTPUT_SEPARATOR + sha1Hex(data1.getBytes(UTF_8)), lines.get(1));
+		assertEquals(a2.getId() + OUTPUT_SEPARATOR + sha1Hex(data2.getBytes(UTF_8)), lines.get(2));
 	}
 	
 	@Test

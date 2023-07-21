@@ -10,15 +10,15 @@ The generated dependency report artifact can be found in the build directory(`ta
 `-dependencies.txt` i.e. `${project.build.finalName}-dependencies.txt`
 
 The contents of the generated artifact file are interpreted as, each line is a key value pair separated by the equals 
-sign for each dependency where the key is of the form `groupId:artifactId:type:` or `groupId:artifactId:type:classifier` 
-and the value is the SHA-1 hash for the actual dependency file e.g. a jar, the entries are always sorted by their keys 
-alphabetically.
+sign for each dependency where the key is of the form `groupId:artifactId:type:version` or 
+`groupId:artifactId:type:classifier:version` for dependencies with a classifier, then the value is the SHA-1 hash for 
+the actual dependency file like e.g. a jar file, the entries are always sorted by their keys alphabetically.
 
 Below is an example of the artifact file's contents for a project with only 3 dependencies
 ```
-org.slf4j:slf4j-api:jar=88c40d8b4f33326f19a7d3c0aaf2c7e8721d4953
-org.slf4j:slf4j-api:jar:tests=88c40d8b4f33326f19a7d3c0aaf2c7e8721d4953
-org.slf4j:slf4j-nop:jar=bd0a88459dd8c99bb9d2474965c1aa36c7d66fb
+org.slf4j:slf4j-api:jar:2.0.6=88c40d8b4f33326f19a7d3c0aaf2c7e8721d4953
+org.slf4j:slf4j-api:jar:tests:2.0.6=88c40d8b4f33326f19a7d3c0aaf2c7e8721d4953
+org.slf4j:slf4j-nop:jar:1.0.0-SNAPSHOT=bd0a88459dd8c99bb9d2474965c1aa36c7d66fb
 ```
 
 [**ATTENTION!!**]

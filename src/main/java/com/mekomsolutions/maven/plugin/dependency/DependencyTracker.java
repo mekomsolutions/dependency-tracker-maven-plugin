@@ -86,8 +86,7 @@ public class DependencyTracker {
 		for (Artifact a : artifacts) {
 			log.debug("Generating sha1 hash for artifact: " + a);
 			
-			String hash = DigestUtils.sha1Hex(Utils.readFile(a.getFile()));
-			keyAndHash.put(a.getDependencyConflictId(), hash);
+			keyAndHash.put(a.getId(), DigestUtils.sha1Hex(Utils.readFile(a.getFile())));
 		}
 		
 		return keyAndHash.entrySet().stream().map(e -> e.getKey() + OUTPUT_SEPARATOR + e.getValue()).collect(toList());
