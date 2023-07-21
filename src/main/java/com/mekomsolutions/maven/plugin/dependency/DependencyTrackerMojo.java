@@ -13,8 +13,8 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Goal which tracks project dependency details excluding transitive dependencies and writes them to
- * a file as an artifact in the build directory.
+ * Tracks project dependency details excluding transitive dependencies and writes them to a file as
+ * an artifact in the build directory.
  */
 @Mojo(name = "track", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.TEST)
 public class DependencyTrackerMojo extends AbstractMojo {

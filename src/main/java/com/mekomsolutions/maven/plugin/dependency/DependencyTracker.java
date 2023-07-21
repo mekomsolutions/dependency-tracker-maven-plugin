@@ -2,12 +2,14 @@ package com.mekomsolutions.maven.plugin.dependency;
 
 import static com.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
 import static com.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
+import static java.util.stream.Collectors.toList;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.Artifact;
@@ -62,9 +64,7 @@ public class DependencyTracker {
 		
 		log.debug("---------------------- Tracked Dependencies ----------------------");
 		
-		for (String line : lines) {
-			log.debug(line);
-		}
+		lines.forEach(line -> log.debug(line));
 		
 		log.debug("------------------------------------------------------------------");
 		
@@ -82,15 +82,15 @@ public class DependencyTracker {
 		
 		log.info("Found " + artifacts.size() + " dependencies to track");
 		
-		List<String> lines = new ArrayList<>();
+		Map<String, String> keyAndHash = new TreeMap<>();
 		for (Artifact a : artifacts) {
 			log.debug("Generating sha1 hash for artifact: " + a);
 			
 			String hash = DigestUtils.sha1Hex(Utils.readFile(a.getFile()));
-			lines.add(a.getDependencyConflictId() + OUTPUT_SEPARATOR + hash);
+			keyAndHash.put(a.getDependencyConflictId(), hash);
 		}
 		
-		return lines;
+		return keyAndHash.entrySet().stream().map(e -> e.getKey() + OUTPUT_SEPARATOR + e.getValue()).collect(toList());
 	}
 	
 	/**
