@@ -21,7 +21,7 @@ org.slf4j:slf4j-api:test-jar:tests:2.0.6=88c40d8b4f33326f19a7d3c0aaf2c7e8721d495
 org.slf4j:slf4j-nop:jar:1.0.0-SNAPSHOT=bd0a88459dd8c99bb9d2474965c1aa36c7d66fb
 ```
 
-[**ATTENTION!!**]
+**ATTENTION!!**
 
 It's highly recommended to run your builds with `update-snapshots` flag set to true, that way the latest snapshot 
 dependency builds are downloaded and used to generate the dependency report artifact. For builds that run in a 'clean' 
@@ -36,7 +36,7 @@ Add the configuration below to your project POM file
 <plugin>
     <groupId>com.mekomsolutions.maven.plugin</groupId>
     <artifactId>dependency-tracker-maven-plugin</artifactId>
-    <version>${plugnVersion}</version>
+    <version>${pluginVersion}</version>
     <executions>
         <execution>
             <goals>
@@ -47,9 +47,9 @@ Add the configuration below to your project POM file
 </plugin>
 ```
 
-And then build your project
+Replace `${pluginVersion}` with an actual plugin version, and then build your project.
 
-## Commandline
+## Command Line
 
 Example command to run from the root of your project
 ```
