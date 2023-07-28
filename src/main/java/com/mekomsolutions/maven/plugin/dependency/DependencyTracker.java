@@ -1,7 +1,7 @@
-package com.mekomsolutions.maven.plugin.dependency;
+package net.mekomsolutions.maven.plugin.dependency;
 
-import static com.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
-import static com.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
 import static java.util.stream.Collectors.toList;
 
 import java.io.File;

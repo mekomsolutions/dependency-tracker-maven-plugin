@@ -1,4 +1,4 @@
-package com.mekomsolutions.maven.plugin.dependency;
+package net.mekomsolutions.maven.plugin.dependency;
 
 import java.io.File;
 

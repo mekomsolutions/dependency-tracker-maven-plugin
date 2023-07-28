@@ -34,7 +34,7 @@ environment everytime e.g. on a CI server where a new container is used for ever
 Add the configuration below to your project POM file
 ```
 <plugin>
-    <groupId>com.mekomsolutions.maven.plugin</groupId>
+    <groupId>net.mekomsolutions.maven.plugin</groupId>
     <artifactId>dependency-tracker-maven-plugin</artifactId>
     <version>${pluginVersion}</version>
     <executions>
@@ -53,7 +53,7 @@ Replace `${pluginVersion}` with an actual plugin version, and then build your pr
 
 Example command to run from the root of your project
 ```
-mvn clean compile com.mekomsolutions.maven.plugin:dependency-tracker-maven-plugin:track -U
+mvn clean compile net.mekomsolutions.maven.plugin:dependency-tracker-maven-plugin:track -U
 ```
 
 Note that we set the `U` flag which forces snapshot updates, you can replace the `compile` goal with any other 
