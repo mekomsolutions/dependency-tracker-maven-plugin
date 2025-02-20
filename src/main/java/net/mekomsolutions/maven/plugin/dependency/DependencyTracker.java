@@ -1,8 +1,8 @@
 package net.mekomsolutions.maven.plugin.dependency;
 
+import static java.util.stream.Collectors.toList;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
-import static java.util.stream.Collectors.toList;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +15,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 
 /**
  * Helper class that captures and generates an artifact containing only declared dependencies along
@@ -24,14 +25,18 @@ public class DependencyTracker {
 	
 	private MavenProject project;
 	
+	private MavenProjectHelper projectHelper;
+	
 	private String buildFileName;
 	
 	private File buildDirectory;
 	
 	private Log log;
 	
-	private DependencyTracker(MavenProject project, String buildFileName, File buildDirectory, Log log) {
+	private DependencyTracker(MavenProject project, MavenProjectHelper projectHelper, String buildFileName,
+	    File buildDirectory, Log log) {
 		this.project = project;
+		this.projectHelper = projectHelper;
 		this.buildFileName = buildFileName;
 		this.buildDirectory = buildDirectory;
 		this.log = log;
@@ -41,15 +46,16 @@ public class DependencyTracker {
 	 * Creates a {@link DependencyTracker} instance
 	 * 
 	 * @param project {@link MavenProject} instance
+	 * @param projectHelper {@link MavenProjectHelper} instance
 	 * @param buildFileName the name of the project build file
 	 * @param buildDirectory the build directory where to save the generated artifact
 	 * @param log {@link Log} instance
 	 * @return DependencyTracker instance
 	 */
-	protected static DependencyTracker createInstance(MavenProject project, String buildFileName, File buildDirectory,
-	        Log log) {
+	protected static DependencyTracker createInstance(MavenProject project, MavenProjectHelper projectHelper,
+	        String buildFileName, File buildDirectory, Log log) {
 		
-		return new DependencyTracker(project, buildFileName, buildDirectory, log);
+		return new DependencyTracker(project, projectHelper, buildFileName, buildDirectory, log);
 	}
 	
 	/**
@@ -104,6 +110,10 @@ public class DependencyTracker {
 		log.info("Saving dependency tracker artifact to " + artifactFile);
 		
 		Utils.writeToFile(artifactFile, lines);
+		
+		log.info("Attaching dependency tracker artifact");
+		
+		projectHelper.attachArtifact(project, Constants.EXTENSION, Constants.CLASSIFIER, artifactFile);
 	}
 	
 }

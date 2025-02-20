@@ -4,6 +4,7 @@ import java.io.File;
 
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -23,6 +24,9 @@ public class DependencyTrackerMojoTest {
 	private MavenProject mockProject;
 	
 	@Mock
+	private MavenProjectHelper mockProjectHelper;
+	
+	@Mock
 	private File mockBuildDir;
 	
 	@Mock
@@ -36,11 +40,13 @@ public class DependencyTrackerMojoTest {
 		PowerMockito.mockStatic(DependencyTracker.class);
 		DependencyTrackerMojo mojo = new DependencyTrackerMojo();
 		Whitebox.setInternalState(mojo, MavenProject.class, mockProject);
+		Whitebox.setInternalState(mojo, MavenProjectHelper.class, mockProjectHelper);
 		Whitebox.setInternalState(mojo, File.class, mockBuildDir);
 		Whitebox.setInternalState(mojo, "buildFileName", TEST_FILE_NAME);
 		mojo = Mockito.spy(mojo);
 		Mockito.when(mojo.getLog()).thenReturn(mockLogger);
-		Mockito.when(DependencyTracker.createInstance(mockProject, TEST_FILE_NAME, mockBuildDir, mockLogger))
+		Mockito.when(
+		    DependencyTracker.createInstance(mockProject, mockProjectHelper, TEST_FILE_NAME, mockBuildDir, mockLogger))
 		        .thenReturn(mockTracker);
 		
 		mojo.execute();

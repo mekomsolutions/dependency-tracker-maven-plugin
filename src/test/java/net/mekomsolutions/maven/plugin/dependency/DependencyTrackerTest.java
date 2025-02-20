@@ -1,8 +1,11 @@
 package net.mekomsolutions.maven.plugin.dependency;
 
-import static net.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
-import static net.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.CLASSIFIER;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.EXTENSION;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
+import static net.mekomsolutions.maven.plugin.dependency.DependencyTracker.createInstance;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
@@ -18,6 +21,7 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +43,9 @@ public class DependencyTrackerTest {
 	private MavenProject mockProject;
 	
 	@Mock
+	private MavenProjectHelper mockProjectHelper;
+	
+	@Mock
 	private File mockBuildDir;
 	
 	@Mock
@@ -47,7 +54,7 @@ public class DependencyTrackerTest {
 	@Before
 	public void setup() {
 		PowerMockito.mockStatic(Utils.class);
-		tracker = DependencyTracker.createInstance(mockProject, TEST_FILE_NAME, mockBuildDir, mockLogger);
+		tracker = createInstance(mockProject, mockProjectHelper, TEST_FILE_NAME, mockBuildDir, mockLogger);
 	}
 	
 	@Test
@@ -125,6 +132,7 @@ public class DependencyTrackerTest {
 		
 		PowerMockito.verifyStatic(Utils.class);
 		Utils.writeToFile(artifactFile, testDependencies);
+		Mockito.verify(mockProjectHelper).attachArtifact(mockProject, EXTENSION, CLASSIFIER, artifactFile);
 	}
 	
 }
