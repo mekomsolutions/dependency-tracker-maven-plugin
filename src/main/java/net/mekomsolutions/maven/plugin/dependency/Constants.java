@@ -12,4 +12,8 @@ public final class Constants {
 	
 	public static final String ARTIFACT_SUFFIX = FILE_NAME_SEPARATOR + CLASSIFIER + "." + EXTENSION;
 	
+	public static final String COMPARE_CLASSIFIER = "comparison";
+	
+	public static final String COMPARE_ARTIFACT_SUFFIX = FILE_NAME_SEPARATOR + COMPARE_CLASSIFIER + "." + EXTENSION;
+	
 }
