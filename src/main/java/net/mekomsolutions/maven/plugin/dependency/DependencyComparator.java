@@ -4,6 +4,7 @@ import static net.mekomsolutions.maven.plugin.dependency.Constants.COMPARE_ARTIF
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -17,6 +18,8 @@ import org.eclipse.aether.impl.ArtifactResolver;
 import org.eclipse.aether.impl.MetadataResolver;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 /**
  * TODO Add javadocs
@@ -90,7 +93,14 @@ public class DependencyComparator {
 		ArtifactRepository remoteRepo = project.getDistributionManagementArtifactRepository();
 		RemoteRepository remoteAetherRepo = RepositoryUtils.toRepo(remoteRepo);
 		ArtifactRequest artifactReq = new ArtifactRequest(ea, Collections.singletonList(remoteAetherRepo), null);
-		return artifactResolver.resolveArtifact(session.getRepositorySession(), artifactReq).getArtifact().getFile();
+		try {
+			ArtifactResult artifactRes = artifactResolver.resolveArtifact(session.getRepositorySession(), artifactReq);
+			return artifactRes.getArtifact().getFile();
+		}
+		catch (ArtifactResolutionException e) {
+			log.info("No remote dependency report found");
+			return null;
+		}
 	}
 	
 	/**
@@ -104,7 +114,7 @@ public class DependencyComparator {
 		
 		log.info("Saving dependency comparison result artifact to " + artifactFile);
 		
-		Utils.writeToFile(artifactFile, Collections.singletonList(result.toString()));
+		Utils.writeBytesToFile(artifactFile, result.toString().getBytes(StandardCharsets.UTF_8));
 	}
 	
 }

@@ -22,7 +22,7 @@ public class Utils {
 	}
 	
 	/**
-	 * Writes data to the specified file
+	 * Writes lines of data to the specified file
 	 *
 	 * @param file the file to write to
 	 * @param lines the lines of data to write
@@ -30,6 +30,17 @@ public class Utils {
 	 */
 	public static void writeToFile(File file, List<String> lines) throws IOException {
 		Files.write(file.toPath(), lines);
+	}
+	
+	/**
+	 * Writes bytes to the specified file
+	 *
+	 * @param file the file to write to
+	 * @param bytes the bytes to write
+	 * @throws IOException
+	 */
+	public static void writeBytesToFile(File file, byte[] bytes) throws IOException {
+		Files.write(file.toPath(), bytes);
 	}
 	
 	/**
