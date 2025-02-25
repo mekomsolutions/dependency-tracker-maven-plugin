@@ -63,7 +63,7 @@ public class DependencyTracker {
 	 * 
 	 * @throws Exception
 	 */
-	protected void track() throws IOException {
+	protected File track() throws IOException {
 		log.info("Capturing project dependencies");
 		
 		List<String> lines = prepareDependencyArtifact();
@@ -74,7 +74,7 @@ public class DependencyTracker {
 		
 		log.debug("------------------------------------------------------------------");
 		
-		saveDependencyArtifact(lines);
+		return saveDependencyArtifact(lines);
 	}
 	
 	/**
@@ -104,7 +104,7 @@ public class DependencyTracker {
 	 * @param lines artifact contents
 	 * @throws IOException
 	 */
-	protected void saveDependencyArtifact(List<String> lines) throws IOException {
+	protected File saveDependencyArtifact(List<String> lines) throws IOException {
 		File artifactFile = Utils.instantiateFile(buildDirectory, buildFileName + ARTIFACT_SUFFIX);
 		
 		log.info("Saving dependency tracker artifact to " + artifactFile);
@@ -114,6 +114,7 @@ public class DependencyTracker {
 		log.info("Attaching dependency tracker artifact");
 		
 		projectHelper.attachArtifact(project, Constants.EXTENSION, Constants.CLASSIFIER, artifactFile);
+		return artifactFile;
 	}
 	
 }

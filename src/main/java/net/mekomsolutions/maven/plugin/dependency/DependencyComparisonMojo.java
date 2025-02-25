@@ -40,7 +40,7 @@ public class DependencyComparisonMojo extends AbstractMojo {
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		try {
 			DependencyComparator.createInstance(project, artifactResolver, session, buildFileName, buildDirectory, getLog())
-			        .compare();
+			        .compare(null, null);
 		}
 		catch (Exception e) {
 			throw new MojoFailureException("An error occurred while comparing dependency reports", e);

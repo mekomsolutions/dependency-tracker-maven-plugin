@@ -4,7 +4,7 @@ import static net.mekomsolutions.maven.plugin.dependency.Constants.COMPARE_ARTIF
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 import org.apache.maven.RepositoryUtils;
@@ -62,13 +62,26 @@ public class DependencyComparator {
 	}
 	
 	/**
-	 * Compares the dependency artifacts reports
+	 * Compares the specified dependency artifacts reports and generates a report artifact containing
+	 * the comparison result. If the reports match, the result of the comparison artifact is 0, if
+	 * changes are detected the result is 1 otherwise -1, where -1 implies there was no existing
+	 * previous report that was found in the remote repository, this typically happens upon the first
+	 * build of the project.
 	 * 
+	 * @param buildReport report file generated during the current build.
+	 * @param remoteReport the report file from the remote repo
 	 * @throws Exception
 	 */
-	protected void compare() throws Exception {
+	protected void compare(File buildReport, File remoteReport) throws Exception {
 		log.info("Comparing project dependency reports");
-		File remoteReportFile = getRemoteDependencyReport();
+		int result = -1;
+		if (remoteReport != null) {
+			byte[] buildContent = Utils.readFile(buildReport);
+			byte[] remoteContent = Utils.readFile(remoteReport);
+			result = Arrays.equals(buildContent, remoteContent) ? 0 : 1;
+		}
+		
+		saveComparisonArtifact(result);
 	}
 	
 	protected File getRemoteDependencyReport() throws Exception {
@@ -83,14 +96,15 @@ public class DependencyComparator {
 	/**
 	 * Saves the artifact containing the comparison result.
 	 * 
+	 * @param result the result to write to the artifact file.
 	 * @throws IOException
 	 */
-	protected void saveComparisonArtifact() throws IOException {
+	protected void saveComparisonArtifact(Integer result) throws IOException {
 		File artifactFile = Utils.instantiateFile(buildDirectory, buildFileName + COMPARE_ARTIFACT_SUFFIX);
 		
 		log.info("Saving dependency comparison result artifact to " + artifactFile);
 		
-		Utils.writeToFile(artifactFile, new ArrayList<>());
+		Utils.writeToFile(artifactFile, Collections.singletonList(result.toString()));
 	}
 	
 }
