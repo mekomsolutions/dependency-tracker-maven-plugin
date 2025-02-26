@@ -68,14 +68,13 @@ public class DependencyTracker {
 	 * @param projectHelper {@link MavenProjectHelper} instance
 	 * @param session {@link MavenSession} instance
 	 * @param buildFileName the name of the project build file
-	 * @param buildDirectory the build directory where to save the generated artifact
+	 * @param buildDir the build directory where to save the generated artifact
 	 * @param log {@link Log} instance
 	 * @return DependencyTracker instance
 	 */
 	protected static DependencyTracker createInstance(MavenProject project, MavenProjectHelper projectHelper,
-	        MavenSession session, ArtifactResolver artifactResolver, String buildFileName, File buildDirectory, Log log) {
-		
-		return new DependencyTracker(project, projectHelper, session, artifactResolver, buildFileName, buildDirectory, log);
+	        MavenSession session, ArtifactResolver artifactResolver, String buildFileName, File buildDir, Log log) {
+		return new DependencyTracker(project, projectHelper, session, artifactResolver, buildFileName, buildDir, log);
 	}
 	
 	/**

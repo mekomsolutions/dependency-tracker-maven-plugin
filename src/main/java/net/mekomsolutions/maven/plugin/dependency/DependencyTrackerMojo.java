@@ -46,17 +46,17 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		try {
-			DependencyTracker tracker = DependencyTracker.createInstance(project, projectHelper, session, artifactResolver,
+			DependencyTracker t = DependencyTracker.createInstance(project, projectHelper, session, artifactResolver,
 			    buildFileName, buildDirectory, getLog());
 			File remoteReport = null;
 			if (compare) {
-				remoteReport = tracker.getRemoteDependencyReport();
+				remoteReport = t.getRemoteDependencyReport();
 			}
 			
-			File report = tracker.track();
+			File report = t.track();
 			
 			if (compare) {
-				tracker.compare(report, remoteReport);
+				t.compare(report, remoteReport);
 			}
 		}
 		catch (Exception e) {
