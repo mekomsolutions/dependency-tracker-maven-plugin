@@ -45,9 +45,8 @@ public class DependencyTrackerMojoTest {
 		Whitebox.setInternalState(mojo, "buildFileName", TEST_FILE_NAME);
 		mojo = Mockito.spy(mojo);
 		Mockito.when(mojo.getLog()).thenReturn(mockLogger);
-		Mockito.when(
-		    DependencyTracker.createInstance(mockProject, mockProjectHelper, TEST_FILE_NAME, mockBuildDir, mockLogger))
-		        .thenReturn(mockTracker);
+		Mockito.when(DependencyTracker.createInstance(mockProject, mockProjectHelper, null, null, TEST_FILE_NAME,
+		    mockBuildDir, mockLogger)).thenReturn(mockTracker);
 		
 		mojo.execute();
 		
