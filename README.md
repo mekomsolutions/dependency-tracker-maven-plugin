@@ -21,15 +21,26 @@ org.slf4j:slf4j-api:test-jar:tests:2.0.6=88c40d8b4f33326f19a7d3c0aaf2c7e8721d495
 org.slf4j:slf4j-nop:jar:1.0.0-SNAPSHOT=bd0a88459dd8c99bb9d2474965c1aa36c7d66fb
 ```
 
+## Dependency Report Comparison
+The plugin is also capable of comparing the generated dependency report of the current build with the most recent one 
+deployed to a remote repository, this repository would be the one defined in the `dependencyManagement` section of the 
+project's POM file. To enable comparison of reports, you set the plugin's `compare` configuration option to true in the 
+POM file.
+
+The result of the comparison is written to a report in the build directory`target`) and will have a name ending with
+`-comparison.txt` i.e. `${project.build.finalName}-comparison.txt`. The contents of the comparison artifact file are 
+interpreted as; 0 for identical reports, 1 for reports that are not identical and -1 when no report is found in the 
+remote repository, a result of -1 typically happens upon the first build of the project.
+
 **ATTENTION!!**
 
 It's highly recommended to run your builds with `update-snapshots` flag set to true, that way the latest snapshot 
 dependency builds are downloaded and used to generate the dependency report artifact. For builds that run in a 'clean' 
 environment everytime e.g. on a CI server where a new container is used for every build then this might not be necessary.
 
-# Usage
+## Usage
 
-## In A Maven Project
+### In A Maven Project
 
 Add the configuration below to your project POM file
 ```
@@ -49,7 +60,26 @@ Add the configuration below to your project POM file
 
 Replace `${pluginVersion}` with an actual plugin version, and then build your project.
 
-## Command Line
+To compare dependency reports, the configuration would be as below,
+```
+<plugin>
+    <groupId>net.mekomsolutions.maven.plugin</groupId>
+    <artifactId>dependency-tracker-maven-plugin</artifactId>
+    <version>${pluginVersion}</version>
+    <configuration>
+        <compare>true</compare>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>track</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### Command Line
 
 Example command to run from the root of your project
 ```
