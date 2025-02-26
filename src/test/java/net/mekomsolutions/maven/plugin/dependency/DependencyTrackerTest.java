@@ -3,28 +3,43 @@ package net.mekomsolutions.maven.plugin.dependency;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.CLASSIFIER;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.COMPARE_ARTIFACT_SUFFIX;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.EXTENSION;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTracker.createInstance;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.impl.ArtifactResolver;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
@@ -32,7 +47,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(Utils.class)
+@PrepareForTest({ Utils.class, RepositoryUtils.class })
 public class DependencyTrackerTest {
 	
 	private static final String TEST_FILE_NAME = "test-1.0";
@@ -51,10 +66,24 @@ public class DependencyTrackerTest {
 	@Mock
 	private Log mockLogger;
 	
+	@Mock
+	private ArtifactRepository mockRemoteRepo;
+	
+	@Mock
+	private ArtifactResolver mockArtifactResolver;
+	
+	@Mock
+	private MavenSession mockSession;
+	
+	@Mock
+	private RepositorySystemSession mockRepoSysSession;
+	
 	@Before
 	public void setup() {
 		PowerMockito.mockStatic(Utils.class);
-		tracker = createInstance(mockProject, mockProjectHelper, null, null, TEST_FILE_NAME, mockBuildDir, mockLogger);
+		PowerMockito.mockStatic(RepositoryUtils.class);
+		tracker = createInstance(mockProject, mockProjectHelper, mockSession, mockArtifactResolver, TEST_FILE_NAME,
+		    mockBuildDir, mockLogger);
 	}
 	
 	@Test
@@ -126,13 +155,122 @@ public class DependencyTrackerTest {
 	public void saveDependencyArtifact_shouldSaveTheDependencyArtifactToTheBuildDirectory() throws Exception {
 		final File artifactFile = Mockito.mock(File.class);
 		List<String> testDependencies = Arrays.asList("dependency1=hash1", "dependency2=hash2");
-		Mockito.when(Utils.instantiateFile(mockBuildDir, TEST_FILE_NAME + ARTIFACT_SUFFIX)).thenReturn(artifactFile);
+		when(Utils.instantiateFile(mockBuildDir, TEST_FILE_NAME + ARTIFACT_SUFFIX)).thenReturn(artifactFile);
 		
 		tracker.saveDependencyArtifact(testDependencies);
 		
 		PowerMockito.verifyStatic(Utils.class);
 		Utils.writeToFile(artifactFile, testDependencies);
 		Mockito.verify(mockProjectHelper).attachArtifact(mockProject, EXTENSION, CLASSIFIER, artifactFile);
+	}
+	
+	@Test
+	public void getRemoteDependencyReport_shouldDownloadTheReportFromTheRemoteRepo() throws Exception {
+		final String groupId = "group-id";
+		final String artifactId = "artifact-id";
+		final String version = "1.0.7-SNAPSHOT";
+		when(mockProject.getGroupId()).thenReturn(groupId);
+		when(mockProject.getArtifactId()).thenReturn(artifactId);
+		when(mockProject.getVersion()).thenReturn(version);
+		final File artifactFile = Mockito.mock(File.class);
+		final org.eclipse.aether.artifact.Artifact artifact = Mockito.mock(org.eclipse.aether.artifact.Artifact.class);
+		when(artifact.getFile()).thenReturn(artifactFile);
+		ArtifactResult artifactResult = new ArtifactResult(new ArtifactRequest());
+		artifactResult.setArtifact(artifact);
+		RemoteRepository remoteAetherRepo = new RemoteRepository.Builder(null, null, null).build();
+		when(mockProject.getDistributionManagementArtifactRepository()).thenReturn(mockRemoteRepo);
+		when(RepositoryUtils.toRepo(mockRemoteRepo)).thenReturn(remoteAetherRepo);
+		when(mockSession.getRepositorySession()).thenReturn(mockRepoSysSession);
+		when(mockArtifactResolver.resolveArtifact(eq(mockRepoSysSession), any(ArtifactRequest.class)))
+		        .thenReturn(artifactResult);
+		
+		assertEquals(artifactFile, tracker.getRemoteDependencyReport());
+		
+		ArgumentCaptor<ArtifactRequest> reqArgCaptor = ArgumentCaptor.forClass(ArtifactRequest.class);
+		Mockito.verify(mockArtifactResolver).resolveArtifact(eq(mockRepoSysSession), reqArgCaptor.capture());
+		ArtifactRequest actualRequest = reqArgCaptor.getValue();
+		org.eclipse.aether.artifact.Artifact aetherArtifact = actualRequest.getArtifact();
+		assertEquals(groupId, aetherArtifact.getGroupId());
+		assertEquals(artifactId, aetherArtifact.getArtifactId());
+		assertEquals(Constants.CLASSIFIER, aetherArtifact.getClassifier());
+		assertEquals(Constants.EXTENSION, aetherArtifact.getExtension());
+		assertEquals(version, aetherArtifact.getVersion());
+		assertEquals(Collections.singletonList(remoteAetherRepo), actualRequest.getRepositories());
+	}
+	
+	@Test
+	public void getRemoteDependencyReport_shouldReturnNullIfReportDoesNotExistInTheRemoteRepo() throws Exception {
+		RemoteRepository remoteAetherRepo = new RemoteRepository.Builder(null, null, null).build();
+		when(mockProject.getDistributionManagementArtifactRepository()).thenReturn(mockRemoteRepo);
+		when(RepositoryUtils.toRepo(mockRemoteRepo)).thenReturn(remoteAetherRepo);
+		when(mockSession.getRepositorySession()).thenReturn(mockRepoSysSession);
+		when(mockArtifactResolver.resolveArtifact(eq(mockRepoSysSession), any(ArtifactRequest.class)))
+		        .thenThrow(new ArtifactResolutionException(Collections.emptyList()));
+		assertNull(tracker.getRemoteDependencyReport());
+		Mockito.verify(mockLogger).info("No remote dependency report found");
+	}
+	
+	@Test
+	public void compare_shouldCompareAndSaveReportForMatchingDependencyReports() throws Exception {
+		final byte[] reportContents = "dependency1=hash1".getBytes(UTF_8);
+		final File buildReport = Mockito.mock(File.class);
+		final File remoteReport = Mockito.mock(File.class);
+		when(Utils.readFile(buildReport)).thenReturn(reportContents);
+		when(Utils.readFile(remoteReport)).thenReturn(reportContents);
+		tracker = Mockito.spy(tracker);
+		AtomicInteger saveInvocations = new AtomicInteger();
+		Mockito.doAnswer(invocation -> {
+			saveInvocations.incrementAndGet();
+			return null;
+		}).when(tracker).saveComparisonArtifact(0);
+		
+		tracker.compare(buildReport, remoteReport);
+		
+		assertEquals(1, saveInvocations.get());
+	}
+	
+	@Test
+	public void compare_shouldCompareAndSaveReportForDependencyReportsThatDoNotMatch() throws Exception {
+		final File buildReport = Mockito.mock(File.class);
+		final File remoteReport = Mockito.mock(File.class);
+		when(Utils.readFile(buildReport)).thenReturn("dependency1=hash1".getBytes(UTF_8));
+		when(Utils.readFile(remoteReport)).thenReturn("dependency1=hash2".getBytes(UTF_8));
+		tracker = Mockito.spy(tracker);
+		AtomicInteger saveInvocations = new AtomicInteger();
+		Mockito.doAnswer(invocation -> {
+			saveInvocations.incrementAndGet();
+			return null;
+		}).when(tracker).saveComparisonArtifact(1);
+		
+		tracker.compare(buildReport, remoteReport);
+		
+		assertEquals(1, saveInvocations.get());
+	}
+	
+	@Test
+	public void compare_shouldCompareAndSaveReportWhenTheReportDoesNotExistInTheRemoteRepo() throws Exception {
+		tracker = Mockito.spy(tracker);
+		AtomicInteger saveInvocations = new AtomicInteger();
+		Mockito.doAnswer(invocation -> {
+			saveInvocations.incrementAndGet();
+			return null;
+		}).when(tracker).saveComparisonArtifact(-1);
+		
+		tracker.compare(Mockito.mock(File.class), null);
+		
+		assertEquals(1, saveInvocations.get());
+	}
+	
+	@Test
+	public void saveComparisonArtifact_shouldSaveTheComparisonArtifactToTheBuildDirectory() throws Exception {
+		final File artifactFile = Mockito.mock(File.class);
+		final Integer result = 1;
+		when(Utils.instantiateFile(mockBuildDir, TEST_FILE_NAME + COMPARE_ARTIFACT_SUFFIX)).thenReturn(artifactFile);
+		
+		tracker.saveComparisonArtifact(result);
+		
+		PowerMockito.verifyStatic(Utils.class);
+		Utils.writeBytesToFile(artifactFile, result.toString().getBytes(UTF_8));
 	}
 	
 }

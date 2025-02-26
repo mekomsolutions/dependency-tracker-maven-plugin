@@ -118,7 +118,7 @@ public class DependencyTracker {
 	}
 	
 	/**
-	 * Saves the artifact
+	 * Saves the dependency artifact to the build directory.
 	 * 
 	 * @param lines artifact contents
 	 * @throws IOException
@@ -134,6 +134,29 @@ public class DependencyTracker {
 		
 		projectHelper.attachArtifact(project, Constants.EXTENSION, Constants.CLASSIFIER, artifactFile);
 		return artifactFile;
+	}
+	
+	/**
+	 * Fetches the dependency remote from the remote repository defined in the distribution management
+	 * section of a project's POM file.
+	 *
+	 * @return the downloaded dependency report file.
+	 * @throws Exception
+	 */
+	protected File getRemoteDependencyReport() {
+		org.eclipse.aether.artifact.Artifact ea = new DefaultArtifact(project.getGroupId(), project.getArtifactId(),
+		        Constants.CLASSIFIER, Constants.EXTENSION, project.getVersion());
+		ArtifactRepository remoteRepo = project.getDistributionManagementArtifactRepository();
+		RemoteRepository remoteAetherRepo = RepositoryUtils.toRepo(remoteRepo);
+		ArtifactRequest artifactReq = new ArtifactRequest(ea, Collections.singletonList(remoteAetherRepo), null);
+		try {
+			ArtifactResult artifactRes = artifactResolver.resolveArtifact(session.getRepositorySession(), artifactReq);
+			return artifactRes.getArtifact().getFile();
+		}
+		catch (ArtifactResolutionException e) {
+			log.info("No remote dependency report found");
+			return null;
+		}
 	}
 	
 	/**
@@ -160,30 +183,7 @@ public class DependencyTracker {
 	}
 	
 	/**
-	 * Fetches the dependency remote from the remote repository defined in the distribution management
-	 * section of a project's POM file.
-	 * 
-	 * @return the downloaded dependency report file.
-	 * @throws Exception
-	 */
-	protected File getRemoteDependencyReport() {
-		org.eclipse.aether.artifact.Artifact ea = new DefaultArtifact(project.getGroupId(), project.getArtifactId(),
-		        Constants.CLASSIFIER, Constants.EXTENSION, project.getVersion());
-		ArtifactRepository remoteRepo = project.getDistributionManagementArtifactRepository();
-		RemoteRepository remoteAetherRepo = RepositoryUtils.toRepo(remoteRepo);
-		ArtifactRequest artifactReq = new ArtifactRequest(ea, Collections.singletonList(remoteAetherRepo), null);
-		try {
-			ArtifactResult artifactRes = artifactResolver.resolveArtifact(session.getRepositorySession(), artifactReq);
-			return artifactRes.getArtifact().getFile();
-		}
-		catch (ArtifactResolutionException e) {
-			log.info("No remote dependency report found");
-			return null;
-		}
-	}
-	
-	/**
-	 * Saves the artifact containing the comparison result.
+	 * Saves the artifact containing the comparison result to the build directory.
 	 *
 	 * @param result the result to write to the artifact file.
 	 * @throws IOException

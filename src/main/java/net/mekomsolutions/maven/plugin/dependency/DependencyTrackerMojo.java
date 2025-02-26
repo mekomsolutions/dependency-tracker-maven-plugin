@@ -53,10 +53,10 @@ public class DependencyTrackerMojo extends AbstractMojo {
 				remoteReport = t.getRemoteDependencyReport();
 			}
 			
-			File report = t.track();
+			File buildReport = t.track();
 			
 			if (compare) {
-				t.compare(report, remoteReport);
+				t.compare(buildReport, remoteReport);
 			}
 		}
 		catch (Exception e) {
