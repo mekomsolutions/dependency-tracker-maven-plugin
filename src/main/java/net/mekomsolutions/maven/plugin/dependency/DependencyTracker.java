@@ -1,6 +1,7 @@
 package net.mekomsolutions.maven.plugin.dependency;
 
 import static java.util.stream.Collectors.toList;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.AGGREGATED_ARTIFACT_SUFFIX;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.COMPARE_ARTIFACT_SUFFIX;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.RepositoryUtils;
@@ -80,6 +82,7 @@ public class DependencyTracker {
 	/**
 	 * Tracks the declared dependencies
 	 * 
+	 * @return The generated dependency report file
 	 * @throws Exception
 	 */
 	protected File track() throws IOException {
@@ -92,6 +95,13 @@ public class DependencyTracker {
 		lines.forEach(line -> log.debug(line));
 		
 		log.debug("------------------------------------------------------------------");
+		
+		if ("pom".equals(project.getPackaging()) && !buildDirectory.exists()) {
+			//It's common for projects with pom packaging to have no generated artifacts so the build directory 
+			//won't exist therefore we need to create it if necessary.
+			log.debug("Creating build directory: " + buildDirectory.getAbsolutePath());
+			buildDirectory.mkdir();
+		}
 		
 		return saveDependencyArtifact(lines);
 	}
@@ -121,6 +131,7 @@ public class DependencyTracker {
 	 * Saves the dependency artifact to the build directory.
 	 * 
 	 * @param lines artifact contents
+	 * @return generated dependency artifact file
 	 * @throws IOException
 	 */
 	protected File saveDependencyArtifact(List<String> lines) throws IOException {
@@ -132,7 +143,7 @@ public class DependencyTracker {
 		
 		log.info("Attaching dependency tracker artifact");
 		
-		projectHelper.attachArtifact(project, Constants.EXTENSION, Constants.CLASSIFIER, artifactFile);
+		projectHelper.attachArtifact(project, Constants.EXT, Constants.CLASSIFIER, artifactFile);
 		return artifactFile;
 	}
 	
@@ -145,7 +156,7 @@ public class DependencyTracker {
 	 */
 	protected File getRemoteDependencyReport() {
 		org.eclipse.aether.artifact.Artifact ea = new DefaultArtifact(project.getGroupId(), project.getArtifactId(),
-		        Constants.CLASSIFIER, Constants.EXTENSION, project.getVersion());
+		        Constants.CLASSIFIER, Constants.EXT, project.getVersion());
 		ArtifactRepository remoteRepo = project.getDistributionManagementArtifactRepository();
 		RemoteRepository remoteAetherRepo = RepositoryUtils.toRepo(remoteRepo);
 		ArtifactRequest artifactReq = new ArtifactRequest(ea, Collections.singletonList(remoteAetherRepo), null);
@@ -170,7 +181,7 @@ public class DependencyTracker {
 	 * @param remoteReport the report file from the remote repo
 	 * @throws Exception
 	 */
-	protected void compare(File buildReport, File remoteReport) throws Exception {
+	protected Integer compare(File buildReport, File remoteReport) throws Exception {
 		log.info("Comparing project dependency reports");
 		int result = -1;
 		if (remoteReport != null) {
@@ -180,6 +191,7 @@ public class DependencyTracker {
 		}
 		
 		saveComparisonArtifact(result);
+		return result;
 	}
 	
 	/**
@@ -192,6 +204,34 @@ public class DependencyTracker {
 		File artifactFile = Utils.instantiateFile(buildDirectory, buildFileName + COMPARE_ARTIFACT_SUFFIX);
 		
 		log.info("Saving dependency comparison result artifact to " + artifactFile);
+		
+		Utils.writeBytesToFile(artifactFile, result.toString().getBytes(StandardCharsets.UTF_8));
+	}
+	
+	protected Integer aggregateDependencyReports(List<Integer> results) {
+		log.info("Aggregating " + results.size() + " dependency comparison results");
+		
+		Integer result;
+		Set<Integer> uniqueResults = results.stream().collect(Collectors.toSet());
+		if (uniqueResults.size() == 1 && uniqueResults.iterator().next() == 0) {
+			result = 0;
+		} else if (uniqueResults.contains(1)) {
+			result = 1;
+		} else {
+			result = -1;
+		}
+		
+		return result;
+	}
+	
+	/**
+	 *
+	 */
+	protected void saveAggregatedArtifact(File parentBuildDir, String parentBuildFileName, Integer result)
+	        throws IOException {
+		File artifactFile = Utils.instantiateFile(parentBuildDir, parentBuildFileName + AGGREGATED_ARTIFACT_SUFFIX);
+		
+		log.info("Saving aggregated dependency comparison result artifact to " + artifactFile);
 		
 		Utils.writeBytesToFile(artifactFile, result.toString().getBytes(StandardCharsets.UTF_8));
 	}

@@ -1,6 +1,8 @@
 package net.mekomsolutions.maven.plugin.dependency;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -43,9 +45,26 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	@Component
 	protected ArtifactResolver artifactResolver;
 	
+	private static File parentBuildDir;
+	
+	private static String parentBuildFileName;
+	
+	private static List<Integer> comparisonResults;
+	
+	private static Integer moduleCount;
+	
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		try {
+			if (compare && moduleCount == null) {
+				moduleCount = project.getModules().size();
+				if (moduleCount > 0) {
+					parentBuildDir = buildDirectory;
+					parentBuildFileName = buildFileName;
+					comparisonResults = new ArrayList<>(project.getModules().size() + 1);
+				}
+			}
+			
 			DependencyTracker t = DependencyTracker.createInstance(project, projectHelper, session, artifactResolver,
 			    buildFileName, buildDirectory, getLog());
 			File remoteReport = null;
@@ -56,7 +75,16 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			File buildReport = t.track();
 			
 			if (compare) {
-				t.compare(buildReport, remoteReport);
+				Integer result = t.compare(buildReport, remoteReport);
+				if (moduleCount > 0) {
+					comparisonResults.add(result);
+				}
+			}
+			
+			if (compare && moduleCount > 0 && comparisonResults.size() == moduleCount + 1) {
+				//We generate the aggregated report after the last module
+				Integer aggregatedResult = t.aggregateDependencyReports(comparisonResults);
+				t.saveAggregatedArtifact(parentBuildDir, parentBuildFileName, aggregatedResult);
 			}
 		}
 		catch (Exception e) {

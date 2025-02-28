@@ -4,7 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.ARTIFACT_SUFFIX;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.CLASSIFIER;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.COMPARE_ARTIFACT_SUFFIX;
-import static net.mekomsolutions.maven.plugin.dependency.Constants.EXTENSION;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.EXT;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTracker.createInstance;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
@@ -36,6 +36,7 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -88,6 +89,7 @@ public class DependencyTrackerTest {
 	
 	@Test
 	public void track_shouldPrepareDependenceDetailsAndSaveTheArtifact() throws Exception {
+		final File mockFile = Mockito.mock(File.class);
 		tracker = Mockito.spy(tracker);
 		List<String> testDependencies = Arrays.asList("dependency1=hash1", "dependency2=hash2");
 		AtomicInteger preparedInvocations = new AtomicInteger();
@@ -96,16 +98,24 @@ public class DependencyTrackerTest {
 			return testDependencies;
 		}).when(tracker).prepareDependencyArtifact();
 		
-		AtomicInteger saveInvocations = new AtomicInteger();
-		Mockito.doAnswer(invocation -> {
-			saveInvocations.incrementAndGet();
-			return null;
-		}).when(tracker).saveDependencyArtifact(testDependencies);
+		Mockito.doReturn(mockFile).when(tracker).saveDependencyArtifact(testDependencies);
 		
-		tracker.track();
+		Assert.assertEquals(mockFile, tracker.track());
 		
 		assertEquals(1, preparedInvocations.get());
-		assertEquals(1, saveInvocations.get());
+	}
+	
+	@Test
+	public void track_shouldNotFailForAProjectWithPomPackagingAndTheBuildDirectoryDoesNotExist() throws Exception {
+		final File mockFile = Mockito.mock(File.class);
+		tracker = Mockito.spy(tracker);
+		List<String> testDependencies = Arrays.asList("dependency1=hash1");
+		Mockito.doReturn(testDependencies).when(tracker).prepareDependencyArtifact();
+		Mockito.doReturn(mockFile).when(tracker).saveDependencyArtifact(testDependencies);
+		Mockito.when(mockProject.getPackaging()).thenReturn("pom");
+		Mockito.when(mockBuildDir.exists()).thenReturn(false);
+		Assert.assertEquals(mockFile, tracker.track());
+		Mockito.verify(mockBuildDir).mkdir();
 	}
 	
 	@Test
@@ -161,7 +171,7 @@ public class DependencyTrackerTest {
 		
 		PowerMockito.verifyStatic(Utils.class);
 		Utils.writeToFile(artifactFile, testDependencies);
-		Mockito.verify(mockProjectHelper).attachArtifact(mockProject, EXTENSION, CLASSIFIER, artifactFile);
+		Mockito.verify(mockProjectHelper).attachArtifact(mockProject, EXT, CLASSIFIER, artifactFile);
 	}
 	
 	@Test
@@ -193,7 +203,7 @@ public class DependencyTrackerTest {
 		assertEquals(groupId, aetherArtifact.getGroupId());
 		assertEquals(artifactId, aetherArtifact.getArtifactId());
 		assertEquals(Constants.CLASSIFIER, aetherArtifact.getClassifier());
-		assertEquals(Constants.EXTENSION, aetherArtifact.getExtension());
+		assertEquals(Constants.EXT, aetherArtifact.getExtension());
 		assertEquals(version, aetherArtifact.getVersion());
 		assertEquals(Collections.singletonList(remoteAetherRepo), actualRequest.getRepositories());
 	}
@@ -271,6 +281,21 @@ public class DependencyTrackerTest {
 		
 		PowerMockito.verifyStatic(Utils.class);
 		Utils.writeBytesToFile(artifactFile, result.toString().getBytes(UTF_8));
+	}
+	
+	@Test
+	public void aggregateDependencyReports_shouldReturnZeroIfTheListContainsZerosOnly() throws Exception {
+		Assert.assertEquals(0, tracker.aggregateDependencyReports(Arrays.asList(0, 0, 0)).intValue());
+	}
+	
+	@Test
+	public void aggregateDependencyReports_shouldReturnOneIfTheListContainsAOne() throws Exception {
+		Assert.assertEquals(1, tracker.aggregateDependencyReports(Arrays.asList(0, -1, 1)).intValue());
+	}
+	
+	@Test
+	public void aggregateDependencyReports_shouldReturnNegativeOneIfTheListContainsZerosAndNegativeOnes() throws Exception {
+		Assert.assertEquals(-1, tracker.aggregateDependencyReports(Arrays.asList(0, -1, 0)).intValue());
 	}
 	
 }
