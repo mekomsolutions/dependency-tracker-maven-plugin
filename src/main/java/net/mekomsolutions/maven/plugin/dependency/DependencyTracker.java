@@ -208,6 +208,12 @@ public class DependencyTracker {
 		Utils.writeBytesToFile(artifactFile, result.toString().getBytes(StandardCharsets.UTF_8));
 	}
 	
+	/**
+	 * Aggregates the specified list of results into a single result.
+	 * 
+	 * @param results list of results to aggregate
+	 * @return the aggregated result
+	 */
 	protected Integer aggregateDependencyReports(List<Integer> results) {
 		log.info("Aggregating " + results.size() + " dependency comparison results");
 		
@@ -225,7 +231,13 @@ public class DependencyTracker {
 	}
 	
 	/**
+	 * Saves the artifact containing the aggregated comparison result to the parent project's build
+	 * directory.
 	 *
+	 * @param parentBuildDir the build directory of the parent project
+	 * @param parentBuildFileName the build file name of the parent project
+	 * @param result the result to write to the artifact file.
+	 * @throws IOException
 	 */
 	protected void saveAggregatedArtifact(File parentBuildDir, String parentBuildFileName, Integer result)
 	        throws IOException {
