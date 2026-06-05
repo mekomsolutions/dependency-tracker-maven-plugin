@@ -3,11 +3,15 @@ package net.mekomsolutions.maven.plugin.dependency;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MavenPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -24,6 +28,16 @@ import org.eclipse.aether.impl.ArtifactResolver;
 @Mojo(name = "track", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.TEST)
 public class DependencyTrackerMojo extends AbstractMojo {
 	
+	private static final String MVN_PLUGIN_GROUP_NAMESPACE = "org.apache.maven.plugins";
+	
+	private static final String DEPLOY_PLUGIN_KEY = MVN_PLUGIN_GROUP_NAMESPACE + ":maven-deploy-plugin";
+	
+	private static final String CTX_KEY_DEPLOY_STATE = MVN_PLUGIN_GROUP_NAMESPACE + ".deploy.DeployMojo.processed";
+	
+	private static final String DEPLOY_STATE_SKIPPED = "SKIPPED";
+	
+	private static final String SYSTEM_PROP_SKIP_DEPLOY = "maven.deploy.skip";
+	
 	@Parameter(defaultValue = "${project}", readonly = true)
 	private MavenProject project;
 	
@@ -33,17 +47,23 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${project.build.finalName}", readonly = true)
 	private String buildFileName;
 	
-	@Parameter(property = "compare", defaultValue = "false")
-	private Boolean compare;
-	
 	@Parameter(defaultValue = "${session}", readonly = true)
 	protected MavenSession session;
 	
 	@Component
 	private MavenProjectHelper projectHelper;
 	
+	@Parameter(property = "compare", defaultValue = "false")
+	private boolean compare;
+	
+	@Parameter(property = "skipDeployIfNoChanges", defaultValue = "false")
+	private boolean skipDeployIfNoChanges;
+	
 	@Component
 	protected ArtifactResolver artifactResolver;
+	
+	@Component
+	private MavenPluginManager pluginManager;
 	
 	private static File parentBuildDir;
 	
@@ -85,11 +105,28 @@ public class DependencyTrackerMojo extends AbstractMojo {
 				//We generate the aggregated report after the last module
 				Integer aggregatedResult = t.aggregateDependencyReports(comparisonResults);
 				t.saveAggregatedArtifact(parentBuildDir, parentBuildFileName, aggregatedResult);
+				if (aggregatedResult == 0 && skipDeployIfNoChanges) {
+					session.getUserProperties().put(SYSTEM_PROP_SKIP_DEPLOY, "true");
+					Plugin deployPlugin = project.getPlugin(DEPLOY_PLUGIN_KEY);
+					PluginDescriptor deployPluginDescriptor = pluginManager.getPluginDescriptor(deployPlugin,
+					    project.getRemotePluginRepositories(), session.getRepositorySession());
+					for (MavenProject proj : session.getProjects()) {
+						skipDeploy(deployPluginDescriptor, proj);
+					}
+				}
 			}
 		}
 		catch (Exception e) {
 			throw new MojoFailureException("An error occurred while tracking dependencies", e);
 		}
+	}
+	
+	private void skipDeploy(PluginDescriptor deployPluginDescriptor, MavenProject project) {
+		getDeployPluginContext(deployPluginDescriptor, project).put(CTX_KEY_DEPLOY_STATE, DEPLOY_STATE_SKIPPED);
+	}
+	
+	private Map<String, Object> getDeployPluginContext(PluginDescriptor deployPluginDescriptor, MavenProject project) {
+		return session.getPluginContext(deployPluginDescriptor, project);
 	}
 	
 }

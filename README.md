@@ -6,7 +6,7 @@ By default, the plugin executes at the `compile` phase and is the earliest phase
 to discover dependencies, for packaging types where compile phase might not apply, usually `prepare-package` or 
 `packaging` should be good to use otherwise you will have to determine the appropriate one.
 
-The generated dependency report artifact can be found in the build directory(`target`) and will have a name ending with 
+The generated dependency report artifact can be found in the build directory `target` and will have a name ending with 
 `-dependencies.txt` i.e. `${project.build.finalName}-dependencies.txt`
 
 The contents of the generated artifact file are interpreted as, each line is a key value pair separated by the equals 
@@ -27,7 +27,7 @@ deployed to a remote repository, this repository would be the one defined in the
 project's POM file. To enable comparison of reports, you set the plugin's `compare` configuration option to true in the 
 POM file.
 
-The result of the comparison is written to a report in the build directory`target`) and will have a name ending with
+The result of the comparison is written to a report in the build directory `target` and will have a name ending with
 `-comparison.txt` i.e. `${project.build.finalName}-comparison.txt`. The contents of the comparison artifact file are 
 interpreted as; 0 for identical reports, 1 for reports that are not identical and -1 when no report is found in the 
 remote repository, a result of -1 typically happens upon the first build of the project.
