@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
@@ -36,6 +37,10 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	private static final String DEPLOY_STATE_SKIPPED = "SKIPPED";
 	
 	private static final String SYSTEM_PROP_SKIP_DEPLOY = "maven.deploy.skip";
+	
+	private static final ComparableVersion MIN_SUPPORTED_VERSION = new ComparableVersion("3.0.0");
+	
+	private static final ComparableVersion MAX_SUPPORTED_VERSION = new ComparableVersion("3.1.4");
 	
 	@Parameter(defaultValue = "${project}", readonly = true)
 	private MavenProject project;
@@ -74,6 +79,18 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
+		Plugin deployPlugin = project.getPlugin(DEPLOY_PLUGIN_KEY);
+		if (compare) {
+			ComparableVersion deployPluginVersion = new ComparableVersion(deployPlugin.getVersion());
+			if (deployPluginVersion.compareTo(MIN_SUPPORTED_VERSION) < 0
+			        || deployPluginVersion.compareTo(MAX_SUPPORTED_VERSION) > 0) {
+				String msg = "Dependency tracker plugin's compare goal does not support maven deploy plugin version "
+				        + deployPluginVersion + ", supported versions range from " + MIN_SUPPORTED_VERSION + "to"
+				        + MAX_SUPPORTED_VERSION;
+				throw new MojoFailureException(msg);
+			}
+		}
+		
 		try {
 			if (compare && moduleCount == null) {
 				moduleCount = project.getModules().size();
@@ -106,7 +123,6 @@ public class DependencyTrackerMojo extends AbstractMojo {
 				t.saveAggregatedArtifact(parentBuildDir, parentBuildFileName, aggregatedResult);
 				if (aggregatedResult == 0 && skipDeployIfNoChanges) {
 					session.getUserProperties().put(SYSTEM_PROP_SKIP_DEPLOY, "true");
-					Plugin deployPlugin = project.getPlugin(DEPLOY_PLUGIN_KEY);
 					PluginDescriptor deployPluginDescriptor = pluginManager.getPluginDescriptor(deployPlugin,
 					    project.getRemotePluginRepositories(), session.getRepositorySession());
 					for (MavenProject proj : session.getProjects()) {
