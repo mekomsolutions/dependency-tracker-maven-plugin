@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -209,12 +210,12 @@ public class DependencyTracker {
 	}
 	
 	/**
-	 * Aggregates the specified list of results into a single result.
+	 * Aggregates the specified collection of results into a single result.
 	 * 
-	 * @param results list of results to aggregate
+	 * @param results collection of results to aggregate
 	 * @return the aggregated result
 	 */
-	protected Integer aggregateDependencyReports(List<Integer> results) {
+	protected Integer aggregateDependencyReports(Collection<Integer> results) {
 		log.info("Aggregating " + results.size() + " dependency comparison results");
 		
 		Integer result;

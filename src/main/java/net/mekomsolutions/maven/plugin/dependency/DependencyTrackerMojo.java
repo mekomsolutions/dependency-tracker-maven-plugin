@@ -1,8 +1,7 @@
 package net.mekomsolutions.maven.plugin.dependency;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.maven.execution.MavenSession;
@@ -69,7 +68,7 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	
 	private static String parentBuildFileName;
 	
-	private static List<Integer> comparisonResults;
+	private static Map<String, Integer> projectAndResultMap;
 	
 	private static Integer moduleCount;
 	
@@ -81,7 +80,7 @@ public class DependencyTrackerMojo extends AbstractMojo {
 				if (moduleCount > 0) {
 					parentBuildDir = buildDirectory;
 					parentBuildFileName = buildFileName;
-					comparisonResults = new ArrayList<>(project.getModules().size() + 1);
+					projectAndResultMap = new LinkedHashMap<>(project.getModules().size() + 1);
 				}
 			}
 			
@@ -97,13 +96,13 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			if (compare) {
 				Integer result = t.compare(buildReport, remoteReport);
 				if (moduleCount > 0) {
-					comparisonResults.add(result);
+					projectAndResultMap.put(project.getArtifactId(), result);
 				}
 			}
 			
-			if (compare && moduleCount > 0 && comparisonResults.size() == moduleCount + 1) {
+			if (compare && moduleCount > 0 && projectAndResultMap.size() == moduleCount + 1) {
 				//We generate the aggregated report after the last module
-				Integer aggregatedResult = t.aggregateDependencyReports(comparisonResults);
+				Integer aggregatedResult = t.aggregateDependencyReports(projectAndResultMap.values());
 				t.saveAggregatedArtifact(parentBuildDir, parentBuildFileName, aggregatedResult);
 				if (aggregatedResult == 0 && skipDeployIfNoChanges) {
 					session.getUserProperties().put(SYSTEM_PROP_SKIP_DEPLOY, "true");
