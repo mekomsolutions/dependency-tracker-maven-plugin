@@ -92,13 +92,14 @@ public class DependencyTrackerMojo extends AbstractMojo {
 		}
 		
 		try {
-			if (compare && moduleCount == null) {
+			if (moduleCount == null) {
 				moduleCount = project.getModules().size();
 				projectAndResultMap = new LinkedHashMap<>(moduleCount + 1);
-				if (moduleCount > 0) {
-					parentBuildDir = buildDirectory;
-					parentBuildFileName = buildFileName;
-				}
+			}
+			
+			if (compare && moduleCount > 0) {
+				parentBuildDir = buildDirectory;
+				parentBuildFileName = buildFileName;
 			}
 			
 			DependencyTracker t = DependencyTracker.createInstance(project, projectHelper, session, artifactResolver,
@@ -110,12 +111,15 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			
 			File buildReport = t.track();
 			final String artifactId = project.getArtifactId();
+			Integer result;
 			if (compare) {
-				Integer result = t.compare(buildReport, remoteReport);
-				projectAndResultMap.put(project.getArtifactId(), result);
+				result = t.compare(buildReport, remoteReport);
 			} else {
 				getLog().info("Skipping comparison of dependency reports for " + artifactId);
+				result = 0;
 			}
+			
+			projectAndResultMap.put(project.getArtifactId(), result);
 			
 			if (compare && (moduleCount == 0 || moduleCount > 0 && projectAndResultMap.size() == moduleCount + 1)) {
 				//We generate the aggregated report after the last module

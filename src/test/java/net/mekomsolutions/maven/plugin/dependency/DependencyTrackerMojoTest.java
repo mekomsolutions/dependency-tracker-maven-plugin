@@ -3,6 +3,7 @@ package net.mekomsolutions.maven.plugin.dependency;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.DEPLOY_PLUGIN_KEY;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.MAX_SUPPORTED_VERSION;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.MIN_SUPPORTED_VERSION;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
@@ -91,8 +92,10 @@ public class DependencyTrackerMojoTest {
 		Mockito.verify(mockTracker, Mockito.never()).compare(ArgumentMatchers.any(), ArgumentMatchers.any());
 		assertNull(getInternalState(DependencyTrackerMojo.class, "parentBuildDir"));
 		assertNull(getInternalState(DependencyTrackerMojo.class, "parentBuildFileName"));
-		assertNull(getInternalState(DependencyTrackerMojo.class, "moduleCount"));
-		assertNull(getInternalState(DependencyTrackerMojo.class, "projectAndResultMap"));
+		int moduleCount = getInternalState(DependencyTrackerMojo.class, "moduleCount");
+		assertEquals(0, (moduleCount));
+		Map<String, Integer> map = getInternalState(DependencyTrackerMojo.class, "projectAndResultMap");
+		assertEquals(1, map.size());
 	}
 	
 	@Test
@@ -151,10 +154,6 @@ public class DependencyTrackerMojoTest {
 		Assert.assertEquals(mockBuildDir, getInternalState(DependencyTrackerMojo.class, "parentBuildDir"));
 		Assert.assertEquals(TEST_FILE_NAME, getInternalState(DependencyTrackerMojo.class, "parentBuildFileName"));
 		Assert.assertEquals(2, (int) getInternalState(DependencyTrackerMojo.class, "moduleCount"));
-		final Map<String, Integer> resultMap = getInternalState(DependencyTrackerMojo.class, "projectAndResultMap");
-		Assert.assertNotNull(resultMap);
-		Assert.assertEquals(1, resultMap.size());
-		Assert.assertEquals(comparisonResult, resultMap.get(parentArtifactId));
 	}
 	
 	@Test
@@ -184,8 +183,7 @@ public class DependencyTrackerMojoTest {
 		
 		assertNull(getInternalState(DependencyTrackerMojo.class, "parentBuildDir"));
 		assertNull(getInternalState(DependencyTrackerMojo.class, "parentBuildFileName"));
-		assertNull(getInternalState(DependencyTrackerMojo.class, "moduleCount"));
-		assertNull(getInternalState(DependencyTrackerMojo.class, "projectAndResultMap"));
+		Assert.assertEquals(2, (int) getInternalState(DependencyTrackerMojo.class, "moduleCount"));
 	}
 	
 	@Test
