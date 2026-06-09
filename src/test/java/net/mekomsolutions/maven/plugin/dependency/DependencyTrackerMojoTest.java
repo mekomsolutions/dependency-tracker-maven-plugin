@@ -1,22 +1,32 @@
 package net.mekomsolutions.maven.plugin.dependency;
 
+import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.CTX_KEY_DEPLOY_STATE;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.DEPLOY_PLUGIN_KEY;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.MAX_SUPPORTED_VERSION;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.MIN_SUPPORTED_VERSION;
+import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.SYSTEM_PROP_SKIP_DEPLOY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.powermock.reflect.Whitebox.getInternalState;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.plugin.MavenPluginManager;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
@@ -47,6 +57,9 @@ public class DependencyTrackerMojoTest {
 	private MavenProjectHelper mockProjectHelper;
 	
 	@Mock
+	protected MavenSession mockSession;
+	
+	@Mock
 	private File mockBuildDir;
 	
 	@Mock
@@ -57,6 +70,12 @@ public class DependencyTrackerMojoTest {
 	
 	@Mock
 	private Plugin mockDeployPlugin;
+	
+	@Mock
+	private MavenPluginManager mockPluginManager;
+	
+	@Mock
+	private PluginDescriptor mockDeployPluginDescriptor;
 	
 	@Before
 	public void setup() {
@@ -258,6 +277,45 @@ public class DependencyTrackerMojoTest {
 		String msg = "Dependency tracker plugin's compare goal does not support maven deploy plugin version " + version
 		        + ", supported versions range from " + MIN_SUPPORTED_VERSION + " to " + MAX_SUPPORTED_VERSION;
 		Assert.assertEquals(msg, e.getMessage());
+	}
+	
+	@Test
+	public void execute_shouldSkipDeployIfThereAreNoDependencyChangesAndSkipIsEnabled() throws Exception {
+		final String artifactId = "datafilter";
+		final Properties userProps = new Properties();
+		userProps.setProperty(SYSTEM_PROP_SKIP_DEPLOY, "false");
+		final Map<String, Object> deployPluginContext = new HashMap<>();
+		deployPluginContext.put(CTX_KEY_DEPLOY_STATE, "TO_BE_DEPLOYED");
+		final File remoteReportFile = Mockito.mock(File.class);
+		final File buildReportFile = Mockito.mock(File.class);
+		PowerMockito.mockStatic(DependencyTracker.class);
+		DependencyTrackerMojo mojo = new DependencyTrackerMojo();
+		Whitebox.setInternalState(mojo, MavenProject.class, mockProject);
+		Whitebox.setInternalState(mojo, MavenProjectHelper.class, mockProjectHelper);
+		Whitebox.setInternalState(mojo, File.class, mockBuildDir);
+		Whitebox.setInternalState(mojo, "compare", true);
+		Whitebox.setInternalState(mojo, "skipDeployIfNoChanges", true);
+		Whitebox.setInternalState(mojo, "session", mockSession);
+		Whitebox.setInternalState(mojo, "pluginManager", mockPluginManager);
+		mojo = Mockito.spy(mojo);
+		when(mojo.getLog()).thenReturn(mockLogger);
+		when(DependencyTracker.createInstance(mockProject, mockProjectHelper, mockSession, null, null, mockBuildDir,
+		    mockLogger)).thenReturn(mockTracker);
+		when(mockTracker.getRemoteDependencyReport()).thenReturn(remoteReportFile);
+		when(mockTracker.track()).thenReturn(buildReportFile);
+		when(mockProject.getArtifactId()).thenReturn(artifactId);
+		when(mockProject.getModules()).thenReturn(Collections.emptyList());
+		when(mockTracker.compare(buildReportFile, remoteReportFile)).thenReturn(0);
+		when(mockSession.getUserProperties()).thenReturn(userProps);
+		when(mockSession.getProjects()).thenReturn(Collections.singletonList(mockProject));
+		when(mockPluginManager.getPluginDescriptor(eq(mockDeployPlugin), anyList(), isNull()))
+		        .thenReturn(mockDeployPluginDescriptor);
+		when(mockSession.getPluginContext(mockDeployPluginDescriptor, mockProject)).thenReturn(deployPluginContext);
+		
+		mojo.execute();
+		
+		Assert.assertEquals("true", userProps.get(SYSTEM_PROP_SKIP_DEPLOY));
+		Assert.assertEquals("SKIPPED", deployPluginContext.get(CTX_KEY_DEPLOY_STATE));
 	}
 	
 }

@@ -32,11 +32,11 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	
 	protected static final String DEPLOY_PLUGIN_KEY = MVN_PLUGIN_GROUP_NAMESPACE + ":maven-deploy-plugin";
 	
-	private static final String CTX_KEY_DEPLOY_STATE = MVN_PLUGIN_GROUP_NAMESPACE + ".deploy.DeployMojo.processed";
+	protected static final String CTX_KEY_DEPLOY_STATE = MVN_PLUGIN_GROUP_NAMESPACE + ".deploy.DeployMojo.processed";
 	
-	private static final String DEPLOY_STATE_SKIPPED = "SKIPPED";
+	protected static final String DEPLOY_STATE_SKIPPED = "SKIPPED";
 	
-	private static final String SYSTEM_PROP_SKIP_DEPLOY = "maven.deploy.skip";
+	protected static final String SYSTEM_PROP_SKIP_DEPLOY = "maven.deploy.skip";
 	
 	protected static final ComparableVersion MIN_SUPPORTED_VERSION = new ComparableVersion("3.0.0");
 	
