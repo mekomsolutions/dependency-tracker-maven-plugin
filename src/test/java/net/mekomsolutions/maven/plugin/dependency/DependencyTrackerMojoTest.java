@@ -1,5 +1,8 @@
 package net.mekomsolutions.maven.plugin.dependency;
 
+import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.DEPLOY_PLUGIN_KEY;
+import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.MAX_SUPPORTED_VERSION;
+import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.MIN_SUPPORTED_VERSION;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
@@ -11,11 +14,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.maven.model.Plugin;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -47,6 +53,15 @@ public class DependencyTrackerMojoTest {
 	
 	@Mock
 	private DependencyTracker mockTracker;
+	
+	@Mock
+	private Plugin mockDeployPlugin;
+	
+	@Before
+	public void setup() {
+		when(mockProject.getPlugin(DEPLOY_PLUGIN_KEY)).thenReturn(mockDeployPlugin);
+		when(mockDeployPlugin.getVersion()).thenReturn("3.1.4");
+	}
 	
 	@After
 	public void tearDown() {
@@ -213,6 +228,38 @@ public class DependencyTrackerMojoTest {
 		Assert.assertEquals(3, actualResults.size());
 		Assert.assertTrue(actualResults.contains(0));
 		Assert.assertTrue(actualResults.contains(1));
+	}
+	
+	@Test
+	public void execute_shouldFailForAnOlderUnSupportedDeployPluginVersion() throws Exception {
+		final String version = "2.8.4";
+		DependencyTrackerMojo mojo = Mockito.spy(new DependencyTrackerMojo());
+		when(mojo.getLog()).thenReturn(mockLogger);
+		when(mockDeployPlugin.getVersion()).thenReturn(version);
+		Whitebox.setInternalState(mojo, MavenProject.class, mockProject);
+		Whitebox.setInternalState(mojo, "compare", true);
+		
+		MojoFailureException e = Assert.assertThrows(MojoFailureException.class, () -> mojo.execute());
+		
+		String msg = "Dependency tracker plugin's compare goal does not support maven deploy plugin version " + version
+		        + ", supported versions range from " + MIN_SUPPORTED_VERSION + " to " + MAX_SUPPORTED_VERSION;
+		Assert.assertEquals(msg, e.getMessage());
+	}
+	
+	@Test
+	public void execute_shouldFailForALaterUnSupportedDeployPluginVersion() throws Exception {
+		final String version = "3.1.5";
+		DependencyTrackerMojo mojo = Mockito.spy(new DependencyTrackerMojo());
+		when(mojo.getLog()).thenReturn(mockLogger);
+		when(mockDeployPlugin.getVersion()).thenReturn(version);
+		Whitebox.setInternalState(mojo, MavenProject.class, mockProject);
+		Whitebox.setInternalState(mojo, "compare", true);
+		
+		MojoFailureException e = Assert.assertThrows(MojoFailureException.class, () -> mojo.execute());
+		
+		String msg = "Dependency tracker plugin's compare goal does not support maven deploy plugin version " + version
+		        + ", supported versions range from " + MIN_SUPPORTED_VERSION + " to " + MAX_SUPPORTED_VERSION;
+		Assert.assertEquals(msg, e.getMessage());
 	}
 	
 }

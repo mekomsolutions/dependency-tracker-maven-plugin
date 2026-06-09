@@ -30,7 +30,7 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	
 	private static final String MVN_PLUGIN_GROUP_NAMESPACE = "org.apache.maven.plugins";
 	
-	private static final String DEPLOY_PLUGIN_KEY = MVN_PLUGIN_GROUP_NAMESPACE + ":maven-deploy-plugin";
+	protected static final String DEPLOY_PLUGIN_KEY = MVN_PLUGIN_GROUP_NAMESPACE + ":maven-deploy-plugin";
 	
 	private static final String CTX_KEY_DEPLOY_STATE = MVN_PLUGIN_GROUP_NAMESPACE + ".deploy.DeployMojo.processed";
 	
@@ -38,9 +38,9 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	
 	private static final String SYSTEM_PROP_SKIP_DEPLOY = "maven.deploy.skip";
 	
-	private static final ComparableVersion MIN_SUPPORTED_VERSION = new ComparableVersion("3.0.0");
+	protected static final ComparableVersion MIN_SUPPORTED_VERSION = new ComparableVersion("3.0.0");
 	
-	private static final ComparableVersion MAX_SUPPORTED_VERSION = new ComparableVersion("3.1.4");
+	protected static final ComparableVersion MAX_SUPPORTED_VERSION = new ComparableVersion("3.1.4");
 	
 	@Parameter(defaultValue = "${project}", readonly = true)
 	private MavenProject project;
@@ -85,7 +85,7 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			if (deployPluginVersion.compareTo(MIN_SUPPORTED_VERSION) < 0
 			        || deployPluginVersion.compareTo(MAX_SUPPORTED_VERSION) > 0) {
 				String msg = "Dependency tracker plugin's compare goal does not support maven deploy plugin version "
-				        + deployPluginVersion + ", supported versions range from " + MIN_SUPPORTED_VERSION + "to"
+				        + deployPluginVersion + ", supported versions range from " + MIN_SUPPORTED_VERSION + " to "
 				        + MAX_SUPPORTED_VERSION;
 				throw new MojoFailureException(msg);
 			}
