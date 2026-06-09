@@ -94,10 +94,10 @@ public class DependencyTrackerMojo extends AbstractMojo {
 		try {
 			if (compare && moduleCount == null) {
 				moduleCount = project.getModules().size();
+				projectAndResultMap = new LinkedHashMap<>(moduleCount + 1);
 				if (moduleCount > 0) {
 					parentBuildDir = buildDirectory;
 					parentBuildFileName = buildFileName;
-					projectAndResultMap = new LinkedHashMap<>(project.getModules().size() + 1);
 				}
 			}
 			
@@ -109,18 +109,24 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			}
 			
 			File buildReport = t.track();
-			
+			final String artifactId = project.getArtifactId();
 			if (compare) {
 				Integer result = t.compare(buildReport, remoteReport);
-				if (moduleCount > 0) {
-					projectAndResultMap.put(project.getArtifactId(), result);
-				}
+				projectAndResultMap.put(project.getArtifactId(), result);
+			} else {
+				getLog().info("Skipping comparison of dependency reports for " + artifactId);
 			}
 			
-			if (compare && moduleCount > 0 && projectAndResultMap.size() == moduleCount + 1) {
+			if (compare && (moduleCount == 0 || moduleCount > 0 && projectAndResultMap.size() == moduleCount + 1)) {
 				//We generate the aggregated report after the last module
-				Integer aggregatedResult = t.aggregateDependencyReports(projectAndResultMap.values());
-				t.saveAggregatedArtifact(parentBuildDir, parentBuildFileName, aggregatedResult);
+				Integer aggregatedResult;
+				if (moduleCount > 0) {
+					aggregatedResult = t.aggregateDependencyReports(projectAndResultMap.values());
+					t.saveAggregatedArtifact(parentBuildDir, parentBuildFileName, aggregatedResult);
+				} else {
+					aggregatedResult = projectAndResultMap.get(artifactId);
+				}
+				
 				if (aggregatedResult == 0 && skipDeployIfNoChanges) {
 					session.getUserProperties().put(SYSTEM_PROP_SKIP_DEPLOY, "true");
 					PluginDescriptor deployPluginDescriptor = pluginManager.getPluginDescriptor(deployPlugin,
