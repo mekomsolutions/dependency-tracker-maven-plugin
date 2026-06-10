@@ -4,6 +4,8 @@ import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.C
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.DEPLOY_PLUGIN_KEY;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.MAX_SUPPORTED_VERSION;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.MIN_SUPPORTED_VERSION;
+import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.PROP_COMPARE;
+import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.PROP_SKIP_IF_NO_CHANGE;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTrackerMojo.SYSTEM_PROP_SKIP_DEPLOY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -99,7 +101,7 @@ public class DependencyTrackerMojoTest {
 		Whitebox.setInternalState(mojo, MavenProjectHelper.class, mockProjectHelper);
 		Whitebox.setInternalState(mojo, File.class, mockBuildDir);
 		Whitebox.setInternalState(mojo, "buildFileName", TEST_FILE_NAME);
-		Whitebox.setInternalState(mojo, "compare", false);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, false);
 		mojo = Mockito.spy(mojo);
 		when(mojo.getLog()).thenReturn(mockLogger);
 		when(DependencyTracker.createInstance(mockProject, mockProjectHelper, null, null, TEST_FILE_NAME, mockBuildDir,
@@ -127,7 +129,7 @@ public class DependencyTrackerMojoTest {
 		Whitebox.setInternalState(mojo, MavenProjectHelper.class, mockProjectHelper);
 		Whitebox.setInternalState(mojo, File.class, mockBuildDir);
 		Whitebox.setInternalState(mojo, "buildFileName", TEST_FILE_NAME);
-		Whitebox.setInternalState(mojo, "compare", true);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, true);
 		mojo = Mockito.spy(mojo);
 		when(mojo.getLog()).thenReturn(mockLogger);
 		when(DependencyTracker.createInstance(mockProject, mockProjectHelper, null, null, TEST_FILE_NAME, mockBuildDir,
@@ -156,17 +158,19 @@ public class DependencyTrackerMojoTest {
 		Whitebox.setInternalState(mojo, MavenProjectHelper.class, mockProjectHelper);
 		Whitebox.setInternalState(mojo, File.class, mockBuildDir);
 		Whitebox.setInternalState(mojo, "buildFileName", TEST_FILE_NAME);
-		Whitebox.setInternalState(mojo, "compare", true);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, true);
+		Whitebox.setInternalState(mojo, "session", mockSession);
 		mojo = Mockito.spy(mojo);
 		when(mojo.getLog()).thenReturn(mockLogger);
-		when(DependencyTracker.createInstance(mockProject, mockProjectHelper, null, null, TEST_FILE_NAME, mockBuildDir,
-		    mockLogger)).thenReturn(mockTracker);
+		when(DependencyTracker.createInstance(mockProject, mockProjectHelper, mockSession, null, TEST_FILE_NAME,
+		    mockBuildDir, mockLogger)).thenReturn(mockTracker);
 		when(mockTracker.getRemoteDependencyReport()).thenReturn(remoteReportFile);
 		when(mockTracker.track()).thenReturn(buildReportFile);
 		when(mockProject.getModules()).thenReturn(Arrays.asList("api", "web"));
 		final Integer comparisonResult = -1;
 		when(mockTracker.compare(buildReportFile, remoteReportFile)).thenReturn(comparisonResult);
 		when(mockProject.getArtifactId()).thenReturn(parentArtifactId);
+		when(mockSession.getUserProperties()).thenReturn(new Properties());
 		
 		mojo.execute();
 		
@@ -189,7 +193,7 @@ public class DependencyTrackerMojoTest {
 		Whitebox.setInternalState(mojo, MavenProjectHelper.class, mockProjectHelper);
 		Whitebox.setInternalState(mojo, File.class, mockBuildDir);
 		Whitebox.setInternalState(mojo, "buildFileName", TEST_FILE_NAME);
-		Whitebox.setInternalState(mojo, "compare", false);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, false);
 		mojo = Mockito.spy(mojo);
 		when(mojo.getLog()).thenReturn(mockLogger);
 		when(DependencyTracker.createInstance(mockProject, mockProjectHelper, null, null, TEST_FILE_NAME, mockBuildDir,
@@ -216,11 +220,12 @@ public class DependencyTrackerMojoTest {
 		Whitebox.setInternalState(mojo, MavenProjectHelper.class, mockProjectHelper);
 		Whitebox.setInternalState(mojo, File.class, mockBuildDir);
 		Whitebox.setInternalState(mojo, "buildFileName", TEST_FILE_NAME);
-		Whitebox.setInternalState(mojo, "compare", true);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, true);
+		Whitebox.setInternalState(mojo, "session", mockSession);
 		mojo = Mockito.spy(mojo);
 		when(mojo.getLog()).thenReturn(mockLogger);
-		when(DependencyTracker.createInstance(mockProject, mockProjectHelper, null, null, TEST_FILE_NAME, mockBuildDir,
-		    mockLogger)).thenReturn(mockTracker);
+		when(DependencyTracker.createInstance(mockProject, mockProjectHelper, mockSession, null, TEST_FILE_NAME,
+		    mockBuildDir, mockLogger)).thenReturn(mockTracker);
 		when(mockTracker.getRemoteDependencyReport()).thenReturn(remoteReportFile);
 		when(mockTracker.track()).thenReturn(buildReportFile);
 		when(mockProject.getModules()).thenReturn(Arrays.asList("api", artifactId));
@@ -235,6 +240,7 @@ public class DependencyTrackerMojoTest {
 		final Integer expectedAggregatedResult = 1;
 		when(mockTracker.compare(buildReportFile, remoteReportFile)).thenReturn(1);
 		when(mockTracker.aggregateDependencyReports(anyCollection())).thenReturn(expectedAggregatedResult);
+		when(mockSession.getUserProperties()).thenReturn(new Properties());
 		
 		mojo.execute();
 		
@@ -254,7 +260,7 @@ public class DependencyTrackerMojoTest {
 		when(mojo.getLog()).thenReturn(mockLogger);
 		when(mockDeployPlugin.getVersion()).thenReturn(version);
 		Whitebox.setInternalState(mojo, MavenProject.class, mockProject);
-		Whitebox.setInternalState(mojo, "compare", true);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, true);
 		
 		MojoFailureException e = Assert.assertThrows(MojoFailureException.class, () -> mojo.execute());
 		
@@ -270,12 +276,12 @@ public class DependencyTrackerMojoTest {
 		when(mojo.getLog()).thenReturn(mockLogger);
 		when(mockDeployPlugin.getVersion()).thenReturn(version);
 		Whitebox.setInternalState(mojo, MavenProject.class, mockProject);
-		Whitebox.setInternalState(mojo, "compare", true);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, true);
 		
 		MojoFailureException e = Assert.assertThrows(MojoFailureException.class, () -> mojo.execute());
 		
-		String msg = "Dependency tracker plugin's compare goal does not support maven deploy plugin version " + version
-		        + ", supported versions range from " + MIN_SUPPORTED_VERSION + " to " + MAX_SUPPORTED_VERSION;
+		String msg = "Dependency tracker plugin's " + PROP_COMPARE + " goal does not support maven deploy plugin version "
+		        + version + ", supported versions range from " + MIN_SUPPORTED_VERSION + " to " + MAX_SUPPORTED_VERSION;
 		Assert.assertEquals(msg, e.getMessage());
 	}
 	
@@ -293,8 +299,8 @@ public class DependencyTrackerMojoTest {
 		Whitebox.setInternalState(mojo, MavenProject.class, mockProject);
 		Whitebox.setInternalState(mojo, MavenProjectHelper.class, mockProjectHelper);
 		Whitebox.setInternalState(mojo, File.class, mockBuildDir);
-		Whitebox.setInternalState(mojo, "compare", true);
-		Whitebox.setInternalState(mojo, "skipDeployIfNoChanges", true);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, true);
+		Whitebox.setInternalState(mojo, PROP_SKIP_IF_NO_CHANGE, true);
 		Whitebox.setInternalState(mojo, "session", mockSession);
 		Whitebox.setInternalState(mojo, "pluginManager", mockPluginManager);
 		mojo = Mockito.spy(mojo);
@@ -316,6 +322,40 @@ public class DependencyTrackerMojoTest {
 		
 		Assert.assertEquals("true", userProps.get(SYSTEM_PROP_SKIP_DEPLOY));
 		Assert.assertEquals("SKIPPED", deployPluginContext.get(CTX_KEY_DEPLOY_STATE));
+	}
+	
+	@Test
+	public void execute_shouldDeployIfThereAreNoDependencyChangesAndSkipIsNotEnabled() throws Exception {
+		final String artifactId = "datafilter";
+		final String deployState = "TO_BE_DEPLOYED";
+		final Properties userProps = new Properties();
+		userProps.setProperty(SYSTEM_PROP_SKIP_DEPLOY, "false");
+		final Map<String, Object> deployPluginContext = new HashMap<>();
+		deployPluginContext.put(CTX_KEY_DEPLOY_STATE, deployState);
+		final File remoteReportFile = Mockito.mock(File.class);
+		final File buildReportFile = Mockito.mock(File.class);
+		PowerMockito.mockStatic(DependencyTracker.class);
+		DependencyTrackerMojo mojo = new DependencyTrackerMojo();
+		Whitebox.setInternalState(mojo, MavenProject.class, mockProject);
+		Whitebox.setInternalState(mojo, MavenProjectHelper.class, mockProjectHelper);
+		Whitebox.setInternalState(mojo, File.class, mockBuildDir);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, true);
+		Whitebox.setInternalState(mojo, PROP_SKIP_IF_NO_CHANGE, false);
+		mojo = Mockito.spy(mojo);
+		when(mojo.getLog()).thenReturn(mockLogger);
+		when(DependencyTracker.createInstance(mockProject, mockProjectHelper, null, null, null, mockBuildDir, mockLogger))
+		        .thenReturn(mockTracker);
+		when(mockTracker.getRemoteDependencyReport()).thenReturn(remoteReportFile);
+		when(mockTracker.track()).thenReturn(buildReportFile);
+		when(mockProject.getArtifactId()).thenReturn(artifactId);
+		when(mockProject.getModules()).thenReturn(Collections.emptyList());
+		when(mockTracker.compare(buildReportFile, remoteReportFile)).thenReturn(0);
+		when(mockSession.getUserProperties()).thenReturn(userProps);
+		
+		mojo.execute();
+		
+		Assert.assertEquals("false", userProps.get(SYSTEM_PROP_SKIP_DEPLOY));
+		Assert.assertEquals(deployState, deployPluginContext.get(CTX_KEY_DEPLOY_STATE));
 	}
 	
 }
