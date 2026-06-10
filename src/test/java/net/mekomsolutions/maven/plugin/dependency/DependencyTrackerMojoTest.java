@@ -358,4 +358,22 @@ public class DependencyTrackerMojoTest {
 		Assert.assertEquals(deployState, deployPluginContext.get(CTX_KEY_DEPLOY_STATE));
 	}
 	
+	@Test
+	public void execute_shouldFailIfDeployAtEndIsNotEnabledForMultiModuleProject() throws Exception {
+		DependencyTrackerMojo mojo = Mockito.spy(new DependencyTrackerMojo());
+		when(mojo.getLog()).thenReturn(mockLogger);
+		Whitebox.setInternalState(mojo, MavenProject.class, mockProject);
+		Whitebox.setInternalState(mojo, PROP_COMPARE, true);
+		Whitebox.setInternalState(mojo, PROP_SKIP_IF_NO_CHANGE, true);
+		Whitebox.setInternalState(mojo, "session", mockSession);
+		when(mockProject.getModules()).thenReturn(Arrays.asList("api", "web"));
+		when(mockSession.getUserProperties()).thenReturn(new Properties());
+		
+		MojoFailureException e = Assert.assertThrows(MojoFailureException.class, () -> mojo.execute());
+		
+		String msg = "The maven-deploy-plugin's deployAtEnd configuration must enabled in order to use the "
+		        + PROP_SKIP_IF_NO_CHANGE + " option in a multi-module project";
+		Assert.assertEquals(msg, e.getMessage());
+	}
+	
 }

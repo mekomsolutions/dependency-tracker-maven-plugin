@@ -165,6 +165,10 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			}
 		}
 		catch (Exception e) {
+			if (e instanceof MojoFailureException) {
+				throw (MojoFailureException) e;
+			}
+			
 			throw new MojoFailureException("An error occurred while tracking dependencies", e);
 		}
 	}
