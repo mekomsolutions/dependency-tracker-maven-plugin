@@ -8,9 +8,12 @@ import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.InvalidPluginDescriptorException;
 import org.apache.maven.plugin.MavenPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.PluginDescriptorParsingException;
+import org.apache.maven.plugin.PluginResolutionException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -19,6 +22,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.aether.impl.ArtifactResolver;
 
 /**
@@ -34,9 +38,15 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	
 	protected static final String CTX_KEY_DEPLOY_STATE = MVN_PLUGIN_GROUP_NAMESPACE + ".deploy.DeployMojo.processed";
 	
+	protected static final String SYSTEM_PROP_SKIP_DEPLOY = "maven.deploy.skip";
+	
+	protected static final String PROP_DEPLOY_AT_END = "deployAtEnd";
+	
 	protected static final String DEPLOY_STATE_SKIPPED = "SKIPPED";
 	
-	protected static final String SYSTEM_PROP_SKIP_DEPLOY = "maven.deploy.skip";
+	protected static final String PROP_COMPARE = "compare";
+	
+	protected static final String PROP_SKIP_IF_NO_CHANGE = "skipDeployIfNoChanges";
 	
 	protected static final ComparableVersion MIN_SUPPORTED_VERSION = new ComparableVersion("3.0.0");
 	
@@ -57,10 +67,10 @@ public class DependencyTrackerMojo extends AbstractMojo {
 	@Component
 	private MavenProjectHelper projectHelper;
 	
-	@Parameter(property = "compare", defaultValue = "false")
+	@Parameter(property = PROP_COMPARE, defaultValue = "false")
 	private boolean compare;
 	
-	@Parameter(property = "skipDeployIfNoChanges", defaultValue = "false")
+	@Parameter(property = PROP_SKIP_IF_NO_CHANGE, defaultValue = "false")
 	private boolean skipDeployIfNoChanges;
 	
 	@Component
@@ -100,6 +110,19 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			if (compare && moduleCount > 0) {
 				parentBuildDir = buildDirectory;
 				parentBuildFileName = buildFileName;
+				Xpp3Dom deployPluginCfg = (Xpp3Dom) deployPlugin.getConfiguration();
+				boolean deployAtEnd;
+				if (deployPluginCfg != null && deployPluginCfg.getChild(PROP_DEPLOY_AT_END) != null) {
+					deployAtEnd = Boolean.valueOf(deployPluginCfg.getChild(PROP_DEPLOY_AT_END).getValue());
+				} else {
+					deployAtEnd = Boolean.valueOf(session.getUserProperties().getProperty(PROP_DEPLOY_AT_END));
+				}
+				
+				if (skipDeployIfNoChanges && !deployAtEnd) {
+					String msg = "The maven-deploy-plugin's deployAtEnd configuration must enabled in order to use the "
+					        + PROP_SKIP_IF_NO_CHANGE + " option in a multi-module project";
+					throw new MojoFailureException(msg);
+				}
 			}
 			
 			DependencyTracker t = DependencyTracker.createInstance(project, projectHelper, session, artifactResolver,
@@ -134,8 +157,7 @@ public class DependencyTrackerMojo extends AbstractMojo {
 				
 				if (aggregatedResult == 0 && skipDeployIfNoChanges) {
 					session.getUserProperties().put(SYSTEM_PROP_SKIP_DEPLOY, "true");
-					PluginDescriptor deployPluginDescriptor = pluginManager.getPluginDescriptor(deployPlugin,
-					    project.getRemotePluginRepositories(), session.getRepositorySession());
+					PluginDescriptor deployPluginDescriptor = getDeployPluginDescriptor(deployPlugin, project);
 					for (MavenProject proj : session.getProjects()) {
 						skipDeploy(deployPluginDescriptor, proj);
 					}
@@ -145,6 +167,12 @@ public class DependencyTrackerMojo extends AbstractMojo {
 		catch (Exception e) {
 			throw new MojoFailureException("An error occurred while tracking dependencies", e);
 		}
+	}
+	
+	private PluginDescriptor getDeployPluginDescriptor(Plugin deployPlugin, MavenProject project)
+	        throws PluginResolutionException, InvalidPluginDescriptorException, PluginDescriptorParsingException {
+		return pluginManager.getPluginDescriptor(deployPlugin, project.getRemotePluginRepositories(),
+		    session.getRepositorySession());
 	}
 	
 	private void skipDeploy(PluginDescriptor deployPluginDescriptor, MavenProject project) {
