@@ -230,7 +230,7 @@ public class DependencyTracker {
 			result = -1;
 		}
 		
-		log.info("Aggregated comparison result is " + result);
+		log.info("Aggregated dependency comparison result -> " + Utils.getStringResult(result));
 		
 		return result;
 	}

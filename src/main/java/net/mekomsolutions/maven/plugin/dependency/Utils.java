@@ -54,4 +54,24 @@ public class Utils {
 		return new File(parent, fileName);
 	}
 	
+	/**
+	 * Returns a message based on the provided result value.
+	 *
+	 * @param result an integer representing the result type, where: - 0 indicates no dependency changes
+	 *            detected - -1 indicates no existing remote dependency report found - any other value
+	 *            indicates dependency changes detected
+	 * @return a string message indicating the corresponding result
+	 */
+	public static String getStringResult(int result) {
+		String str;
+		if (result == 0) {
+			str = "no dependency changes detected";
+		} else if (result == -1) {
+			str = "no existing remote dependency report found";
+		} else {
+			str = "dependency changes detected";
+		}
+		
+		return str;
+	}
 }

@@ -1,5 +1,7 @@
 package net.mekomsolutions.maven.plugin.dependency;
 
+import static net.mekomsolutions.maven.plugin.dependency.Utils.getStringResult;
+
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -138,7 +140,7 @@ public class DependencyTrackerMojo extends AbstractMojo {
 				}
 				
 				result = t.compare(buildReport, remoteReport);
-				getLog().info("Comparison result for " + artifactId + " is " + result);
+				getLog().info("Dependency comparison result for " + artifactId + " -> " + getStringResult(result));
 			} else {
 				getLog().info("Skipping comparison of dependency reports for " + artifactId);
 				result = 0;
@@ -157,7 +159,7 @@ public class DependencyTrackerMojo extends AbstractMojo {
 				}
 				
 				if (aggregatedResult == 0 && skipDeployIfNoChanges) {
-					getLog().info("Disabling deploy because no dependency changes were detected");
+					getLog().info("Disabling artifact deployment because no dependency changes have been detected");
 					session.getUserProperties().put(SYSTEM_PROP_SKIP_DEPLOY, "true");
 					PluginDescriptor deployPluginDescriptor = getDeployPluginDescriptor(deployPlugin, project);
 					for (MavenProject proj : session.getProjects()) {
