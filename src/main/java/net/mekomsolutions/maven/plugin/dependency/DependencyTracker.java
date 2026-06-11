@@ -156,9 +156,11 @@ public class DependencyTracker {
 	 * @throws Exception
 	 */
 	protected File getRemoteDependencyReport() {
-		org.eclipse.aether.artifact.Artifact ea = new DefaultArtifact(project.getGroupId(), project.getArtifactId(),
-		        Constants.CLASSIFIER, Constants.EXT, project.getVersion());
+		final String artifactId = project.getArtifactId();
 		ArtifactRepository remoteRepo = project.getDistributionManagementArtifactRepository();
+		log.info("Fetching dependency report for " + artifactId + " from " + remoteRepo.getUrl());
+		org.eclipse.aether.artifact.Artifact ea = new DefaultArtifact(project.getGroupId(), artifactId, Constants.CLASSIFIER,
+		        Constants.EXT, project.getVersion());
 		RemoteRepository remoteAetherRepo = RepositoryUtils.toRepo(remoteRepo);
 		ArtifactRequest artifactReq = new ArtifactRequest(ea, Collections.singletonList(remoteAetherRepo), null);
 		try {
@@ -183,7 +185,7 @@ public class DependencyTracker {
 	 * @throws Exception
 	 */
 	protected Integer compare(File buildReport, File remoteReport) throws Exception {
-		log.info("Comparing project dependency reports");
+		log.info("Comparing project dependency reports for " + project.getArtifactId());
 		int result = -1;
 		if (remoteReport != null) {
 			byte[] buildContent = Utils.readFile(buildReport);
@@ -227,6 +229,8 @@ public class DependencyTracker {
 		} else {
 			result = -1;
 		}
+		
+		log.info("Aggregated comparison result is " + result);
 		
 		return result;
 	}
