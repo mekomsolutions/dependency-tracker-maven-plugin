@@ -129,16 +129,15 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			
 			DependencyTracker t = DependencyTracker.createInstance(project, projectHelper, session, artifactResolver,
 			    buildFileName, buildDirectory, getLog());
+			File remoteReport = null;
+			if (compare) {
+				remoteReport = t.getRemoteDependencyReport();
+			}
 			
 			File buildReport = t.track();
 			final String artifactId = project.getArtifactId();
 			Integer result;
 			if (compare) {
-				File remoteReport = null;
-				if (compare) {
-					remoteReport = t.getRemoteDependencyReport();
-				}
-				
 				result = t.compare(buildReport, remoteReport);
 				getLog().info("Dependency comparison result for " + artifactId + " -> " + getStringResult(result));
 			} else {
