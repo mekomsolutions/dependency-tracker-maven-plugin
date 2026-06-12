@@ -3,8 +3,10 @@ package net.mekomsolutions.maven.plugin.dependency;
 public final class Constants {
 	
 	public static final String OUTPUT_SEPARATOR = "=";
+
+    public static final String KEY_SEPARATOR_AT = "$";
 	
-	public static final String VALUE_SEPARATOR = ":";
+	public static final String SEPARATOR_COLON = ":";
 	
 	public static final String FILE_NAME_SEPARATOR = "-";
 	
