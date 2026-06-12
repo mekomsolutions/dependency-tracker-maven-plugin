@@ -6,7 +6,7 @@ import static net.mekomsolutions.maven.plugin.dependency.Constants.CLASSIFIER;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.COMPARE_ARTIFACT_SUFFIX;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.EXT;
 import static net.mekomsolutions.maven.plugin.dependency.Constants.OUTPUT_SEPARATOR;
-import static net.mekomsolutions.maven.plugin.dependency.Constants.VALUE_SEPARATOR;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.SEPARATOR_COLON;
 import static net.mekomsolutions.maven.plugin.dependency.DependencyTracker.createInstance;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 import static org.junit.Assert.assertEquals;
@@ -157,13 +157,13 @@ public class DependencyTrackerTest {
 		List<String> lines = tracker.prepareDependencyArtifact();
 		
 		assertEquals(3, lines.size());
-		assertEquals(a3.getDependencyConflictId() + OUTPUT_SEPARATOR + a3.getBaseVersion() + VALUE_SEPARATOR
+		assertEquals(a3.getDependencyConflictId() + OUTPUT_SEPARATOR + a3.getBaseVersion() + SEPARATOR_COLON
 		        + sha1Hex(data3.getBytes(UTF_8)),
 		    lines.get(0));
-		assertEquals(a1.getDependencyConflictId() + OUTPUT_SEPARATOR + a1.getBaseVersion() + VALUE_SEPARATOR
+		assertEquals(a1.getDependencyConflictId() + OUTPUT_SEPARATOR + a1.getBaseVersion() + SEPARATOR_COLON
 		        + sha1Hex(data1.getBytes(UTF_8)),
 		    lines.get(1));
-		assertEquals(a2.getDependencyConflictId() + OUTPUT_SEPARATOR + a2.getBaseVersion() + VALUE_SEPARATOR
+		assertEquals(a2.getDependencyConflictId() + OUTPUT_SEPARATOR + a2.getBaseVersion() + SEPARATOR_COLON
 		        + sha1Hex(data2.getBytes(UTF_8)),
 		    lines.get(2));
 	}

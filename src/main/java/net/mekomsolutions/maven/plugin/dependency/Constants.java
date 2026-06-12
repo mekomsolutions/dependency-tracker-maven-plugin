@@ -4,7 +4,7 @@ public final class Constants {
 	
 	public static final String OUTPUT_SEPARATOR = "=";
 
-    public static final String KEY_SEPARATOR_AT = "$";
+    public static final String KEY_SEPARATOR_DOLLAR = "$";
 	
 	public static final String SEPARATOR_COLON = ":";
 	
