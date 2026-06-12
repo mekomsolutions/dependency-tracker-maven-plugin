@@ -4,6 +4,8 @@ public final class Constants {
 	
 	public static final String OUTPUT_SEPARATOR = "=";
 	
+	public static final String VALUE_SEPARATOR = ":";
+	
 	public static final String FILE_NAME_SEPARATOR = "-";
 	
 	public static final String CLASSIFIER = "dependencies";
