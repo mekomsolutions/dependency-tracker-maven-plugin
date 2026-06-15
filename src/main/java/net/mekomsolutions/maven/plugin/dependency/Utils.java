@@ -1,9 +1,20 @@
 package net.mekomsolutions.maven.plugin.dependency;
 
+import static java.util.stream.Collectors.toMap;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.KEY_SEPARATOR_DOLLAR;
+import static net.mekomsolutions.maven.plugin.dependency.Constants.SEPARATOR_COLON;
+
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Collectors;
+
+import org.apache.maven.plugin.logging.Log;
 
 /**
  * Contains plugin utilities
@@ -74,4 +85,66 @@ public class Utils {
 		
 		return str;
 	}
+	
+	/**
+	 * Prints the differences between dependencies from a build report file and a remote report file,
+	 * including additions, removals, and modifications. It logs the details categorized by these
+	 * changes.
+	 *
+	 * @param buildReport the file containing the build's dependency report
+	 * @param remoteReport the file containing the remote dependency report for comparison
+	 * @param log the logging object used to output the dependency change details
+	 * @throws IOException
+	 */
+	public static void printDependencyDiff(File buildReport, File remoteReport, Log log) throws IOException {
+		DependencyDiff diff = createDependencyDiff(buildReport, remoteReport);
+		log.info("Dependency Changes:");
+		if (!diff.getAdded().isEmpty()) {
+			log.info(" Added: (" + diff.getAdded().size() + ")");
+			diff.getAdded().forEach(a -> log.info("  - " + a));
+		}
+		
+		if (!diff.getRemoved().isEmpty()) {
+			log.info(" Removed: (" + diff.getRemoved().size() + ")");
+			diff.getRemoved().forEach(r -> log.info("  - " + r));
+		}
+		
+		if (!diff.getModified().isEmpty()) {
+			Map<String, List<String>> modified = diff.getModified();
+			log.info(" Modified: (" + modified.size() + ")");
+			modified.entrySet().stream().forEach(e -> {
+				log.info("  - " + e.getKey() + " was " + e.getValue().stream().collect(Collectors.joining(" now ")));
+			});
+		}
+	}
+	
+	/**
+	 * Creates a DependencyDiff object by comparing two dependency report files, identifying added,
+	 * removed, and modified dependencies.
+	 *
+	 * @param buildReport the file containing the build's dependency report
+	 * @param remoteReport the file containing the remote dependency report for comparison
+	 * @return a DependencyDiff object containing the detected changes in dependencies
+	 * @throws IOException
+	 */
+	public static DependencyDiff createDependencyDiff(File buildReport, File remoteReport) throws IOException {
+		Properties buildProps = new Properties();
+		buildProps.load(new FileInputStream(buildReport));
+		Properties remoteProps = new Properties();
+		remoteProps.load(new FileInputStream(remoteReport));
+		final List<String> added = buildProps.keySet().stream().filter(key -> !remoteProps.containsKey(key))
+		        .map(k -> getArtifactId(k)).collect(Collectors.toList());
+		final List<String> removed = remoteProps.keySet().stream().filter(key -> !buildProps.containsKey(key))
+		        .map(k -> getArtifactId(k)).collect(Collectors.toList());
+		final Map<String, List<String>> modified = buildProps.keySet().stream().filter(remoteProps::containsKey)
+		        .filter(key -> !buildProps.get(key).equals(remoteProps.get(key))).collect(toMap(k -> getArtifactId(k),
+		            k -> Arrays.asList(remoteProps.get(k).toString(), buildProps.get(k).toString())));
+		
+		return new DependencyDiff(added, removed, modified);
+	}
+	
+	private static String getArtifactId(Object key) {
+		return key.toString().replace(KEY_SEPARATOR_DOLLAR, SEPARATOR_COLON);
+	}
+	
 }

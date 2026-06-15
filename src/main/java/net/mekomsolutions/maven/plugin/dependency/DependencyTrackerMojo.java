@@ -140,6 +140,9 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			if (compare) {
 				result = t.compare(buildReport, remoteReport);
 				getLog().info("Dependency comparison result for " + artifactId + " -> " + getStringResult(result));
+				if (result == 1) {
+					Utils.printDependencyDiff(buildReport, remoteReport, getLog());
+				}
 			} else {
 				getLog().info("Skipping comparison of dependency reports for " + artifactId);
 				result = 0;
