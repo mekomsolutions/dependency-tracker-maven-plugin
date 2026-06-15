@@ -5,7 +5,6 @@ import static net.mekomsolutions.maven.plugin.dependency.Constants.KEY_SEPARATOR
 import static net.mekomsolutions.maven.plugin.dependency.Constants.SEPARATOR_COLON;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -128,10 +127,8 @@ public class Utils {
 	 * @throws IOException
 	 */
 	public static DependencyDiff createDependencyDiff(File buildReport, File remoteReport) throws IOException {
-		Properties buildProps = new Properties();
-		buildProps.load(new FileInputStream(buildReport));
-		Properties remoteProps = new Properties();
-		remoteProps.load(new FileInputStream(remoteReport));
+		Properties buildProps = PropertyUtils.loadFile(buildReport);
+		Properties remoteProps = PropertyUtils.loadFile(remoteReport);
 		final List<String> added = buildProps.keySet().stream().filter(key -> !remoteProps.containsKey(key))
 		        .map(k -> getArtifactId(k)).collect(Collectors.toList());
 		final List<String> removed = remoteProps.keySet().stream().filter(key -> !buildProps.containsKey(key))
