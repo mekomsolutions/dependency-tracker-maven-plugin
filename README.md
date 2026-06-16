@@ -79,6 +79,37 @@ To compare dependency reports, the configuration would be as below,
 </plugin>
 ```
 
+To conditionally deploy artifacts i.e. only when dependencies have changed, the configuration would be as below,
+```
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-deploy-plugin</artifactId>
+    <configuration>
+        <!-- This is only required in a multi-module project -->
+        <deployAtEnd>true</deployAtEnd>
+    </configuration>
+</plugin>
+<plugin>
+    <groupId>net.mekomsolutions.maven.plugin</groupId>
+    <artifactId>dependency-tracker-maven-plugin</artifactId>
+    <version>${pluginVersion}</version>
+    <configuration>
+        <compare>true</compare>
+        <skipDeployIfNoChanges>true</compare>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>track</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+**Note** Deploy plugin is configured to deploy artifacts when the last module is built, this is required for a 
+multi-module project, otherwise artifacts will still be deployed for any modules that precede the first project that is 
+found with changes.
+
 ### Command Line
 
 Example command to run from the root of your project
