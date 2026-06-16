@@ -47,7 +47,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(DependencyTracker.class)
+@PrepareForTest({ DependencyTracker.class, Utils.class })
 public class DependencyTrackerMojoTest {
 	
 	private static final String TEST_FILE_NAME = "test-1.0";
@@ -241,10 +241,15 @@ public class DependencyTrackerMojoTest {
 		when(mockTracker.compare(buildReportFile, remoteReportFile)).thenReturn(1);
 		when(mockTracker.aggregateDependencyReports(anyCollection())).thenReturn(expectedAggregatedResult);
 		when(mockSession.getUserProperties()).thenReturn(new Properties());
+		PowerMockito.mockStatic(Utils.class);
+		PowerMockito.doNothing().when(Utils.class);
+		Utils.printDependencyDiff(buildReportFile, remoteReportFile, mockLogger);
 		
 		mojo.execute();
 		
 		Mockito.verify(mockTracker).saveAggregatedArtifact(mockBuildDir, TEST_FILE_NAME, 1);
+		PowerMockito.verifyStatic(Utils.class);
+		Utils.printDependencyDiff(buildReportFile, remoteReportFile, mockLogger);
 		ArgumentCaptor<Collection> resultsCaptor = ArgumentCaptor.forClass(Collection.class);
 		Mockito.verify(mockTracker).aggregateDependencyReports(resultsCaptor.capture());
 		Collection<Integer> actualResults = resultsCaptor.getValue();

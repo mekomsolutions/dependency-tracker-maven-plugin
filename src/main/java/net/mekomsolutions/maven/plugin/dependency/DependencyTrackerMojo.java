@@ -107,11 +107,13 @@ public class DependencyTrackerMojo extends AbstractMojo {
 			if (moduleCount == null) {
 				moduleCount = project.getModules().size();
 				projectAndResultMap = new LinkedHashMap<>(moduleCount + 1);
+				if (compare && moduleCount > 0) {
+					parentBuildDir = buildDirectory;
+					parentBuildFileName = buildFileName;
+				}
 			}
 			
 			if (compare && moduleCount > 0) {
-				parentBuildDir = buildDirectory;
-				parentBuildFileName = buildFileName;
 				Xpp3Dom deployPluginCfg = (Xpp3Dom) deployPlugin.getConfiguration();
 				boolean deployAtEnd;
 				if (deployPluginCfg != null && deployPluginCfg.getChild(PROP_DEPLOY_AT_END) != null) {
