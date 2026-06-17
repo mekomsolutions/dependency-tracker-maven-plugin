@@ -95,7 +95,7 @@ To conditionally deploy artifacts i.e. only when dependencies have changed, the 
     <version>${pluginVersion}</version>
     <configuration>
         <compare>true</compare>
-        <skipDeployIfNoChanges>true</compare>
+        <skipDeployIfNoChanges>true</skipDeployIfNoChanges>
     </configuration>
     <executions>
         <execution>
